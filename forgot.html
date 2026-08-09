@@ -1,4 +1,69 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Reset password — Rynix Tech</title><link rel="stylesheet" href="style.css"></head>
-<body class="auth-page"><main class="auth-card auth-card--small"><a class="auth-brand" href="index.html">RYNIX TECH</a><h1>Reset password.</h1><p id="intro">We’ll send a 6-digit verification code to your email.</p><div id="requestForm"><label class="form-field">Email<input id="email" type="email" autocomplete="email" placeholder="you@example.com" required></label><button id="sendBtn" class="button button-primary" type="button">Send reset code <span aria-hidden="true">→</span></button></div><div id="otpForm" hidden><label class="form-field">Verification code<input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code"></label><label class="form-field">New password<input id="password" type="password" autocomplete="new-password" placeholder="At least 8 characters"></label><button id="resetBtn" class="button button-primary" type="button">Verify & reset password <span aria-hidden="true">→</span></button><button id="resendBtn" class="button button-google" type="button">Resend code</button><p id="timer" class="auth-links"></p></div><div class="message" id="message" role="status" aria-live="polite"></div><p class="auth-links"><a href="login.html">Back to log in</a></p></main>
-<script type="module">import { auth, functions } from './firebase.js'; import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js'; import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js'; const email = document.getElementById('email'), otp = document.getElementById('otp'), password = document.getElementById('password'), message = document.getElementById('message'), requestForm = document.getElementById('requestForm'), otpForm = document.getElementById('otpForm'), sendBtn = document.getElementById('sendBtn'), resetBtn = document.getElementById('resetBtn'), resendBtn = document.getElementById('resendBtn'), timer = document.getElementById('timer'); const requestOtp = httpsCallable(functions, 'requestPasswordResetOtp'), verifyOtp = httpsCallable(functions, 'verifyPasswordResetOtp'); let cooldownId; function showError(error) { message.style.color = 'var(--danger)'; message.textContent = error?.message || 'Something went wrong. Please try again.'; } function startCooldown(seconds) { clearInterval(cooldownId); let remaining = seconds; resendBtn.disabled = true; const tick = () => { timer.textContent = `You can resend a code in ${remaining}s.`; if (remaining-- <= 0) { clearInterval(cooldownId); resendBtn.disabled = false; timer.textContent = 'Did not receive it? You can resend the code.'; } }; tick(); cooldownId = setInterval(tick, 1000); } async function sendCode() { const value = email.value.trim(); if (!value) return showError({ message: 'Enter your email address.' }); sendBtn.disabled = resendBtn.disabled = true; message.textContent = ''; try { const result = await requestOtp({ email: value }); requestForm.hidden = true; otpForm.hidden = false; document.getElementById('intro').textContent = 'Enter the 6-digit code and your new password. The code expires in 10 minutes.'; startCooldown(result.data.cooldownSeconds); otp.focus(); } catch (error) { showError(error); resendBtn.disabled = false; if (error?.details?.cooldownSeconds) startCooldown(error.details.cooldownSeconds); } finally { sendBtn.disabled = false; } } sendBtn.addEventListener('click', sendCode); resendBtn.addEventListener('click', sendCode); resetBtn.addEventListener('click', async () => { resetBtn.disabled = true; message.textContent = ''; try { await verifyOtp({ email: email.value.trim(), password: password.value, code: otp.value.trim() }); await signInWithEmailAndPassword(auth, email.value.trim(), password.value); window.location.replace('index.html'); } catch (error) { showError(error); resetBtn.disabled = false; } });</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset password — Rynix Tech</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+  <main class="auth-card auth-card--small">
+    <a class="auth-brand" href="index.html">RYNIX TECH</a>
+    <h1>Reset password.</h1>
+    <p id="intro">Enter your email address to receive a password reset link.</p>
+
+    <form id="resetForm" onsubmit="return false;">
+      <label class="form-field">Email
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      </label>
+      <button id="sendBtn" class="button button-primary" type="button">
+        Send reset link <span aria-hidden="true">→</span>
+      </button>
+    </form>
+
+    <div class="message" id="message" role="status" aria-live="polite"></div>
+    <p class="auth-links"><a href="login.html">Back to log in</a></p>
+  </main>
+
+  <script type="module" src="auth.js"></script>
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+
+    const emailInput = document.getElementById('email');
+    const sendBtn = document.getElementById('sendBtn');
+    const message = document.getElementById('message');
+
+    sendBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      message.textContent = '';
+
+      if (!email) {
+        message.style.color = 'var(--danger)';
+        message.textContent = 'Please enter your email address.';
+        return;
+      }
+
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending reset link…';
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        message.style.color = 'var(--success)';
+        message.textContent = 'Password reset email sent! Check your inbox or spam folder.';
+      } catch (error) {
+        message.style.color = 'var(--danger)';
+        let msg = error.message;
+        if (error.code === 'auth/user-not-found') {
+          msg = 'No account found with this email.';
+        } else if (error.code === 'auth/invalid-email') {
+          msg = 'Please enter a valid email address.';
+        }
+        message.textContent = msg;
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send reset link →';
+      }
+    });
+  </script>
+</body>
+</html>

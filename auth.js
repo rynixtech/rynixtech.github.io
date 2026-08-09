@@ -5,84 +5,104 @@ import {
   signInWithEmailAndPassword,
   signOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
 import {
   doc,
   setDoc,
+  getDoc,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
-// Signup
-window.signup = function(email, password) {
-  createUserWithEmailAndPassword(auth, email, password)
-    .then(async (userCredential) => {
+// Ensure Firestore user profile exists at users/{user.uid}
+export async function ensureUserProfile(user, extraData = {}) {
+  if (!user || !user.uid) return null;
+  const userRef = doc(db, "users", user.uid);
+  const profileData = {
+    uid: user.uid,
+    email: user.email || "",
+    displayName: user.displayName || extraData.displayName || "",
+    photoURL: user.photoURL || "",
+    role: "user",
+    lastLoginAt: serverTimestamp(),
+    ...extraData
+  };
+  try {
+    await setDoc(userRef, profileData, { merge: true });
+    return profileData;
+  } catch (error) {
+    console.error("Firestore user profile save failed:", error);
+    return null;
+  }
+}
 
-    const user = userCredential.user;
+// Fetch user profile from Firestore users/{uid}
+export async function getUserProfile(uid) {
+  if (!uid) return null;
+  try {
+    const snap = await getDoc(doc(db, "users", uid));
+    if (snap.exists()) {
+      return snap.data();
+    }
+  } catch (error) {
+    console.error("Error loading user profile:", error);
+  }
+  return null;
+}
 
-    setDoc(doc(db, "users", user.uid), {
-        email: user.email,
-        role: "user",
-        createdAt: serverTimestamp()
-    }, { merge: true }).catch(error => console.error("User profile save failed:", error));
-
-      alert("Account created successfully!");
-      window.location.href = "index.html";
-    })
-    .catch(error => {
-      alert(error.message);
-    });
-};
-
-// Login
-window.login = function(email, password) {
-  signInWithEmailAndPassword(auth, email, password)
-    .then(() => {
-      alert("Login successful!");
-      window.location.href = "index.html";
-    })
-    .catch(error => {
-      alert(error.message);
-    });
-};
-
-// Google Login / Signup
+// Global Google Login / Signup
 window.googleLogin = async function() {
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
-
-    // Save the profile without delaying entry to the home page.
-    setDoc(doc(db, "users", user.uid), {
-      email: user.email,
-      role: "user",
-      createdAt: serverTimestamp()
-    }, { merge: true }).catch(error => console.error("User profile save failed:", error));
-
+    await ensureUserProfile(user);
     window.location.replace("index.html");
-
   } catch (error) {
-    alert(error.message);
+    alert(error.message || "Google sign-in failed.");
   }
 };
 
-// Logout
+// Global Logout
 window.logout = function() {
   signOut(auth).then(() => {
-    window.location.href = "login.html";
+    window.location.href = "index.html";
+  }).catch(error => {
+    console.error("Logout error:", error);
+    window.location.href = "index.html";
   });
 };
 
-// Forgot Password
+// Password Reset Email Link
 window.resetPassword = function(email) {
-  sendPasswordResetEmail(auth, email)
-    .then(() => {
-      alert("Password reset email sent.");
-    })
-    .catch(error => {
-      alert(error.message);
-    });
+  return sendPasswordResetEmail(auth, email);
 };
+
+// Helper for password eye toggles
+export function setupPasswordToggles() {
+  document.querySelectorAll(".password-toggle").forEach(btn => {
+    const targetId = btn.getAttribute("data-target");
+    if (!targetId) return;
+    const input = document.getElementById(targetId);
+    if (!input) return;
+
+    btn.addEventListener("click", () => {
+      const isPassword = input.type === "password";
+      input.type = isPassword ? "text" : "password";
+      btn.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+      btn.setAttribute("aria-pressed", isPassword ? "true" : "false");
+      btn.textContent = isPassword ? "🙈" : "👁";
+    });
+  });
+}
+
+// Run password toggle setup when DOM is ready
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", setupPasswordToggles);
+} else {
+  setupPasswordToggles();
+}

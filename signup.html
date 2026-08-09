@@ -1,13 +1,138 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="Create a Rynix Tech account."><title>Create account — Rynix Tech</title><link rel="stylesheet" href="style.css"></head>
-<body class="auth-page"><main class="auth-card"><a class="auth-brand" href="index.html">RYNIX TECH</a><h1>Join the mission.</h1><p id="intro">Create your account, then verify your email with a secure one-time code.</p>
-  <div id="signupForm"><label class="form-field">Email<input id="email" type="email" autocomplete="email" placeholder="you@example.com" required></label><label class="form-field">Password<input id="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required></label><button id="sendBtn" class="button button-primary" type="button">Send verification code <span aria-hidden="true">→</span></button><div class="divider">or</div><button class="button button-google" type="button" onclick="googleLogin()">Continue with Google</button></div>
-  <div id="otpForm" hidden><label class="form-field">Verification code<input id="otp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code"></label><button id="verifyBtn" class="button button-primary" type="button">Verify & create account <span aria-hidden="true">→</span></button><button id="resendBtn" class="button button-google" type="button">Resend code</button><p id="timer" class="auth-links"></p></div>
-  <div class="message" id="message" role="status" aria-live="polite"></div><p class="auth-links">Already have an account? <a href="login.html">Log in</a></p>
-</main><script type="module" src="auth.js"></script><script type="module">
-import { auth, functions } from './firebase.js'; import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js'; import { signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
-const email = document.getElementById('email'), password = document.getElementById('password'), otp = document.getElementById('otp'), message = document.getElementById('message'), signupForm = document.getElementById('signupForm'), otpForm = document.getElementById('otpForm'), sendBtn = document.getElementById('sendBtn'), verifyBtn = document.getElementById('verifyBtn'), resendBtn = document.getElementById('resendBtn'), timer = document.getElementById('timer'); const requestOtp = httpsCallable(functions, 'requestSignupOtp'), verifyOtp = httpsCallable(functions, 'verifySignupOtp'); let cooldownId;
-function showError(error) { message.style.color = 'var(--danger)'; message.textContent = error?.message || 'Something went wrong. Please try again.'; } function startCooldown(seconds) { clearInterval(cooldownId); let remaining = seconds; resendBtn.disabled = true; const tick = () => { timer.textContent = `You can resend a code in ${remaining}s.`; if (remaining-- <= 0) { clearInterval(cooldownId); resendBtn.disabled = false; timer.textContent = 'Did not receive it? You can resend the code.'; } }; tick(); cooldownId = setInterval(tick, 1000); }
-async function sendCode() { const value = email.value.trim(); if (!value || !password.value) return showError({ message: 'Enter your email and a password first.' }); sendBtn.disabled = resendBtn.disabled = true; message.textContent = ''; try { const result = await requestOtp({ email: value }); signupForm.hidden = true; otpForm.hidden = false; document.getElementById('intro').textContent = `We sent a 6-digit code to ${value}. It expires in 10 minutes.`; startCooldown(result.data.cooldownSeconds); otp.focus(); } catch (error) { showError(error); resendBtn.disabled = false; if (error?.details?.cooldownSeconds) startCooldown(error.details.cooldownSeconds); } finally { sendBtn.disabled = false; } }
-sendBtn.addEventListener('click', sendCode); resendBtn.addEventListener('click', sendCode); verifyBtn.addEventListener('click', async () => { verifyBtn.disabled = true; message.textContent = ''; try { await verifyOtp({ email: email.value.trim(), password: password.value, code: otp.value.trim() }); await signInWithEmailAndPassword(auth, email.value.trim(), password.value); window.location.replace('index.html'); } catch (error) { showError(error); verifyBtn.disabled = false; } });
-</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Create a Rynix Tech account.">
+  <title>Create account — Rynix Tech</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+  <main class="auth-card">
+    <a class="auth-brand" href="index.html">RYNIX TECH</a>
+    <h1>Join the mission.</h1>
+    <p id="intro">Create your account, then verify your email with a secure link.</p>
+    
+    <form id="signupForm">
+      <label class="form-field">Email
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      </label>
+      
+      <label class="form-field">Password
+        <div class="password-field-wrapper">
+          <input id="password" type="password" autocomplete="new-password" placeholder="At least 8 characters" required>
+          <button type="button" class="password-toggle" data-target="password" aria-label="Show password" aria-pressed="false">👁</button>
+        </div>
+      </label>
+
+      <label class="form-field">Confirm Password
+        <div class="password-field-wrapper">
+          <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Re-enter password" required>
+          <button type="button" class="password-toggle" data-target="confirmPassword" aria-label="Show password" aria-pressed="false">👁</button>
+        </div>
+      </label>
+
+      <button id="signupBtn" class="button button-primary" type="submit">
+        Create account <span aria-hidden="true">→</span>
+      </button>
+      
+      <div class="divider">or</div>
+      <button class="button button-google" type="button" onclick="googleLogin()">Continue with Google</button>
+    </form>
+
+    <div class="message" id="message" role="status" aria-live="polite"></div>
+    <p class="auth-links">Already have an account? <a href="login.html">Log in</a></p>
+  </main>
+
+  <script type="module" src="auth.js"></script>
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { createUserWithEmailAndPassword, sendEmailVerification, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+    import { ensureUserProfile } from './auth.js';
+
+    const signupForm = document.getElementById('signupForm');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirmPassword');
+    const signupBtn = document.getElementById('signupBtn');
+    const message = document.getElementById('message');
+
+    // If already logged in & verified, redirect to index
+    onAuthStateChanged(auth, (user) => {
+      if (user && user.emailVerified) {
+        window.location.replace('index.html');
+      }
+    });
+
+    function showError(msg) {
+      message.style.color = 'var(--danger)';
+      message.textContent = msg;
+    }
+
+    function showSuccess(msg) {
+      message.style.color = 'var(--success)';
+      message.textContent = msg;
+    }
+
+    async function handleSignup() {
+      const emailValue = email.value.trim();
+      const passValue = password.value;
+      const confirmValue = confirmPassword.value;
+
+      message.textContent = '';
+
+      if (!emailValue || !passValue || !confirmValue) {
+        return showError('Please fill in all fields.');
+      }
+
+      if (passValue !== confirmValue) {
+        return showError('Passwords do not match.');
+      }
+
+      if (passValue.length < 8) {
+        return showError('Password must be at least 8 characters.');
+      }
+
+      signupBtn.disabled = true;
+      signupBtn.textContent = 'Creating account…';
+
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, emailValue, passValue);
+        const user = userCredential.user;
+
+        // Save profile to Firestore users/{uid}
+        await ensureUserProfile(user);
+
+        // Send standard Firebase email verification link
+        await sendEmailVerification(user);
+
+        showSuccess('Verification email sent. Please check your email and click the verification link.');
+        signupBtn.textContent = 'Verification Email Sent ✓';
+
+      } catch (error) {
+        let msg = error.message;
+        if (error.code === 'auth/email-already-in-use') {
+          msg = 'An account with this email already exists. Please log in.';
+        } else if (error.code === 'auth/invalid-email') {
+          msg = 'Please enter a valid email address.';
+        } else if (error.code === 'auth/weak-password') {
+          msg = 'Password is too weak. Please use at least 8 characters.';
+        }
+        showError(msg);
+        signupBtn.disabled = false;
+        signupBtn.textContent = 'Create account →';
+      }
+    }
+
+    signupForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleSignup();
+    });
+
+    signupBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleSignup();
+    });
+  </script>
+</body>
+</html>

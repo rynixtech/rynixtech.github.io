@@ -20,6 +20,6 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, "us-central1");
 
-if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+if ((location.hostname === "localhost" || location.hostname === "127.0.0.1") && location.search.includes("useEmulator=true")) {
   connectFunctionsEmulator(functions, "127.0.0.1", 5001);
 }

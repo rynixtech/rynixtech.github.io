@@ -1,15 +1,101 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="Sign in to your Rynix Tech account."><title>Log in — Rynix Tech</title><link rel="stylesheet" href="style.css"></head>
-<body class="auth-page"><main class="auth-card"><a class="auth-brand" href="index.html">RYNIX TECH</a><h1>Welcome back.</h1><p>Sign in to return to the Rynix Tech home page.</p>
-  <label class="form-field">Email<input id="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
-  <label class="form-field">Password<input id="password" type="password" autocomplete="current-password" placeholder="Your password" required></label>
-  <button id="loginBtn" class="button button-primary" type="button" onclick="loginUser()">Log in <span aria-hidden="true">→</span></button>
-  <div class="divider">or</div><button id="googleBtn" class="button button-google" type="button" onclick="googleLogin()">Continue with Google</button>
-  <div class="message" id="message" role="status" aria-live="polite"></div><p class="auth-links"><a href="forgot.html">Forgot password?</a><br><br>New to Rynix? <a href="signup.html">Create an account</a></p>
-</main>
-<script type="module" src="auth.js"></script><script type="module">
-import { auth } from './firebase.js';
-import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
-onAuthStateChanged(auth, user => { if (user) window.location.replace('index.html'); });
-window.loginUser = async () => { const email = document.getElementById('email').value.trim(), password = document.getElementById('password').value, btn = document.getElementById('loginBtn'), message = document.getElementById('message'); if (!email || !password) { message.style.color = 'var(--danger)'; message.textContent = 'Enter both your email address and password.'; return; } btn.disabled = true; btn.textContent = 'Signing in…'; try { await setPersistence(auth, browserLocalPersistence); await signInWithEmailAndPassword(auth, email, password); window.location.replace('index.html'); } catch (error) { message.style.color = 'var(--danger)'; message.textContent = error.message; btn.disabled = false; btn.textContent = 'Log in →'; } };
-</script></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sign in to your Rynix Tech account.">
+  <title>Log in — Rynix Tech</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="auth-page">
+  <main class="auth-card">
+    <a class="auth-brand" href="index.html">RYNIX TECH</a>
+    <h1>Welcome back.</h1>
+    <p>Sign in to return to the Rynix Tech home page.</p>
+
+    <form id="loginForm" onsubmit="return false;">
+      <label class="form-field">Email
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      </label>
+
+      <label class="form-field">Password
+        <div class="password-field-wrapper">
+          <input id="password" type="password" autocomplete="current-password" placeholder="Your password" required>
+          <button type="button" class="password-toggle" data-target="password" aria-label="Show password" aria-pressed="false">👁</button>
+        </div>
+      </label>
+
+      <button id="loginBtn" class="button button-primary" type="button">
+        Log in <span aria-hidden="true">→</span>
+      </button>
+
+      <div class="divider">or</div>
+      <button id="googleBtn" class="button button-google" type="button" onclick="googleLogin()">Continue with Google</button>
+    </form>
+
+    <div class="message" id="message" role="status" aria-live="polite"></div>
+    <p class="auth-links">
+      <a href="forgot.html">Forgot password?</a><br><br>
+      New to Rynix? <a href="signup.html">Create an account</a>
+    </p>
+  </main>
+
+  <script type="module" src="auth.js"></script>
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+    import { ensureUserProfile } from './auth.js';
+
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const loginBtn = document.getElementById('loginBtn');
+    const message = document.getElementById('message');
+
+    // Auto-redirect if already logged in
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        await ensureUserProfile(user);
+        window.location.replace('index.html');
+      }
+    });
+
+    async function handleLogin() {
+      const emailValue = email.value.trim();
+      const passValue = password.value;
+
+      message.textContent = '';
+
+      if (!emailValue || !passValue) {
+        message.style.color = 'var(--danger)';
+        message.textContent = 'Enter both your email address and password.';
+        return;
+      }
+
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in…';
+
+      try {
+        await setPersistence(auth, browserLocalPersistence);
+        const userCredential = await signInWithEmailAndPassword(auth, emailValue, passValue);
+        const user = userCredential.user;
+
+        await ensureUserProfile(user);
+        window.location.replace('index.html');
+      } catch (error) {
+        message.style.color = 'var(--danger)';
+        let msg = error.message;
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+          msg = 'Invalid email or password. Please try again.';
+        } else if (error.code === 'auth/invalid-email') {
+          msg = 'Please enter a valid email address.';
+        }
+        message.textContent = msg;
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Log in →';
+      }
+    }
+
+    loginBtn.addEventListener('click', handleLogin);
+  </script>
+</body>
+</html>

@@ -53,5 +53,30 @@
   </main>
   <footer class="site-footer">© 2026 Rynix Tech. Engineered for the future.</footer>
   <script src="script.js"></script>
+  <script type="module" src="auth.js"></script>
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+    import { getUserProfile, ensureUserProfile } from './auth.js';
+
+    const headerActions = document.querySelector('.header-actions');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!headerActions) return;
+      if (user) {
+        const profile = await getUserProfile(user.uid) || await ensureUserProfile(user);
+        const displayName = profile?.displayName || user.displayName || user.email.split('@')[0];
+        headerActions.innerHTML = `
+          <a class="button button-quiet user-pill" href="dashboard.html" title="${user.email}">👤 ${displayName}</a>
+          <button class="button button-primary" type="button" onclick="logout()">Log out</button>
+        `;
+      } else {
+        headerActions.innerHTML = `
+          <a class="button button-quiet" href="login.html">Log in</a>
+          <a class="button button-primary" href="signup.html">Get started</a>
+        `;
+      }
+    });
+  </script>
 </body>
 </html>
