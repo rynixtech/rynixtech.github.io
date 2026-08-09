@@ -64,7 +64,7 @@ window.googleLogin = async function() {
 
     // Redirect based on verification (Google accounts are usually verified)
     if (user.emailVerified) {
-      window.location.replace("dashboard.html");
+      window.location.replace("index.html");
     } else {
       window.location.replace("verify.html");
     }
