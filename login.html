@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="description" content="Sign in to your Rynix Tech account."><title>Log in — Rynix Tech</title><link rel="stylesheet" href="style.css"></head>
-<body class="auth-page"><main class="auth-card"><a class="auth-brand" href="index.html">RYNIX TECH</a><h1>Welcome back.</h1><p>Sign in to continue to your Rynix Tech dashboard.</p>
+<body class="auth-page"><main class="auth-card"><a class="auth-brand" href="index.html">RYNIX TECH</a><h1>Welcome back.</h1><p>Sign in to return to the Rynix Tech home page.</p>
   <label class="form-field">Email<input id="email" type="email" autocomplete="email" placeholder="you@example.com" required></label>
   <label class="form-field">Password<input id="password" type="password" autocomplete="current-password" placeholder="Your password" required></label>
   <button id="loginBtn" class="button button-primary" type="button" onclick="loginUser()">Log in <span aria-hidden="true">→</span></button>
@@ -10,6 +10,6 @@
 <script type="module" src="auth.js"></script><script type="module">
 import { auth } from './firebase.js';
 import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
-onAuthStateChanged(auth, user => { if (user) window.location.replace(user.emailVerified ? 'index.html' : 'verify.html'); });
-window.loginUser = async () => { const email = document.getElementById('email').value.trim(), password = document.getElementById('password').value, btn = document.getElementById('loginBtn'), message = document.getElementById('message'); if (!email || !password) { message.style.color = 'var(--danger)'; message.textContent = 'Enter both your email address and password.'; return; } btn.disabled = true; btn.textContent = 'Signing in…'; try { await setPersistence(auth, browserLocalPersistence); const { user } = await signInWithEmailAndPassword(auth, email, password); window.location.replace(user.emailVerified ? 'index.html' : 'verify.html'); } catch (error) { message.style.color = 'var(--danger)'; message.textContent = error.message; btn.disabled = false; btn.textContent = 'Log in →'; } };
+onAuthStateChanged(auth, user => { if (user) window.location.replace('index.html'); });
+window.loginUser = async () => { const email = document.getElementById('email').value.trim(), password = document.getElementById('password').value, btn = document.getElementById('loginBtn'), message = document.getElementById('message'); if (!email || !password) { message.style.color = 'var(--danger)'; message.textContent = 'Enter both your email address and password.'; return; } btn.disabled = true; btn.textContent = 'Signing in…'; try { await setPersistence(auth, browserLocalPersistence); await signInWithEmailAndPassword(auth, email, password); window.location.replace('index.html'); } catch (error) { message.style.color = 'var(--danger)'; message.textContent = error.message; btn.disabled = false; btn.textContent = 'Log in →'; } };
 </script></body></html>

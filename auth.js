@@ -22,14 +22,14 @@ window.signup = function(email, password) {
 
     const user = userCredential.user;
 
-    await setDoc(doc(db, "users", user.uid), {
+    setDoc(doc(db, "users", user.uid), {
         email: user.email,
         role: "user",
         createdAt: serverTimestamp()
-    }, { merge: true });
+    }, { merge: true }).catch(error => console.error("User profile save failed:", error));
 
       alert("Account created successfully!");
-      window.location.href = "dashboard.html";
+      window.location.href = "index.html";
     })
     .catch(error => {
       alert(error.message);
@@ -41,7 +41,7 @@ window.login = function(email, password) {
   signInWithEmailAndPassword(auth, email, password)
     .then(() => {
       alert("Login successful!");
-      window.location.href = "dashboard.html";
+      window.location.href = "index.html";
     })
     .catch(error => {
       alert(error.message);
@@ -55,19 +55,14 @@ window.googleLogin = async function() {
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    // Ensure user doc exists / merge
-    await setDoc(doc(db, "users", user.uid), {
+    // Save the profile without delaying entry to the home page.
+    setDoc(doc(db, "users", user.uid), {
       email: user.email,
       role: "user",
       createdAt: serverTimestamp()
-    }, { merge: true });
+    }, { merge: true }).catch(error => console.error("User profile save failed:", error));
 
-    // Redirect based on verification (Google accounts are usually verified)
-    if (user.emailVerified) {
-      window.location.replace("index.html");
-    } else {
-      window.location.replace("verify.html");
-    }
+    window.location.replace("index.html");
 
   } catch (error) {
     alert(error.message);

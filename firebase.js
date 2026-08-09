@@ -1,6 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+import { getFunctions, connectFunctionsEmulator } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyD4fRxucKX7nWJKuwdT5RX7UFogvDsIXAo",
@@ -17,3 +18,8 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const functions = getFunctions(app, "us-central1");
+
+if (location.hostname === "localhost" || location.hostname === "127.0.0.1") {
+  connectFunctionsEmulator(functions, "127.0.0.1", 5001);
+}

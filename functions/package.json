@@ -1,0 +1,20 @@
+{
+  "name": "rynix-tech-functions",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "check": "node --check index.js && node --check otp.js",
+    "test": "node --test test/otp.test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.2.0",
+    "resend": "^4.1.2"
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.26.0"
+  }
+}
