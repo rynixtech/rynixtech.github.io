@@ -10,19 +10,24 @@ function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 }
-resize();
-window.addEventListener("resize", resize);
 
 // ============================================
 // BLACK HOLE VARIABLES
 // ============================================
 const blackHole = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
+    x: window.innerWidth / 2,
+    y: window.innerHeight / 2,
     radius: 40,
     rotation: 0,
     mass: 1000
 };
+
+resize();
+window.addEventListener("resize", () => {
+    resize();
+    blackHole.x = canvas.width / 2;
+    blackHole.y = canvas.height / 2;
+});
 
 const accretionDisk = {
     particles: [],
@@ -146,11 +151,11 @@ function animatePart1() {
         // Glow effect
         ctx.beginPath();
         ctx.arc(x, y, particle.size * 2, 0, Math.PI * 2);
-        ctx.strokeStyle = hue.replace(/0\.85|0\.7|0\.55/, match => {
-            // convert alpha to a lower value for stroke
-            const a = parseFloat(match);
-            return ("rgba(255, 200, 0, " + (a * 0.25) + ")");
-        });
+        ctx.strokeStyle = particle.heat > 0.7
+            ? "rgba(255, 200, 0, 0.22)"
+            : particle.heat > 0.4
+                ? "rgba(255, 100, 0, 0.18)"
+                : "rgba(255, 50, 0, 0.14)";
         ctx.lineWidth = 1;
         ctx.stroke();
     }
@@ -198,7 +203,9 @@ function animatePart1() {
     blackHole.rotation += 0.001;
     time++;
     
-    requestAnimationFrame(animatePart1);
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        requestAnimationFrame(animatePart1);
+    }
 }
 
 animatePart1();

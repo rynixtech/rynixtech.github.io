@@ -1,332 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rynix Tech - Galaxy Animation</title>
-
-<style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-    scroll-behavior: smooth;
-}
-
-html, body {
-    width: 100%;
-    height: 100%;
-    background: #000000;
-    color: white;
-    overflow-x: hidden;
-}
-
-/* Rotating galaxy background image */
-#galaxy {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    background-image: url('galaxy.jpg');
-    background-size: cover;
-    background-position: center;
-    transform-origin: 50% 50%;
-    animation: galaxy-rotate 120s linear infinite;
-    filter: contrast(1.05) saturate(1.1) brightness(0.7);
-}
-
-@keyframes galaxy-rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-}
-
-#stars {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2; /* canvas above galaxy image */
-    display: block;
-}
-
-header {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    padding: 20px 8%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
-    z-index: 1000;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
-}
-
-.logo {
-    font-size: 28px;
-    font-weight: bold;
-    color: #FFD700;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.logo img {
-    width: 45px;
-    height: 45px;
-    border-radius: 50%;
-}
-
-.nav-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 40px;
-}
-
-nav a {
-    color: white;
-    text-decoration: none;
-    transition: 0.3s;
-}
-
-nav a:hover {
-    color: #FFD700;
-    text-shadow: 0 0 10px #FFD700;
-}
-
-.auth-buttons {
-    display: flex;
-    gap: 15px;
-}
-
-.auth-buttons a {
-    padding: 8px 20px;
-    border-radius: 25px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: 0.3s;
-    font-size: 14px;
-}
-
-.login-btn {
-    color: #FFD700;
-    border: 2px solid #FFD700;
-}
-
-.login-btn:hover {
-    background: #FFD700;
-    color: black;
-    box-shadow: 0 0 10px #FFD700;
-}
-
-.signup-btn {
-    background: #FFD700;
-    color: black;
-    border: 2px solid #FFD700;
-}
-
-.signup-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px #FFD700;
-}
-
-.hero {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 20px;
-    position: relative;
-    z-index: 10;
-}
-
-.hero img {
-    width: 180px;
-    border-radius: 50%;
-    box-shadow: 0 0 40px gold;
-    margin-bottom: 30px;
-    animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-20px); }
-}
-
-.hero h1 {
-    font-size: 60px;
-    color: #FFD700;
-    margin-bottom: 20px;
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-}
-
-.hero p {
-    max-width: 700px;
-    margin: 20px auto;
-    font-size: 20px;
-    color: #ddd;
-}
-
-.button {
-    display: inline-block;
-    padding: 15px 35px;
-    margin-top: 25px;
-    background: #FFD700;
-    color: black;
-    text-decoration: none;
-    font-weight: bold;
-    border-radius: 40px;
-    transition: 0.3s;
-    cursor: pointer;
-    border: none;
-}
-
-.button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 20px gold;
-}
-
-section {
-    padding: 100px 8%;
-    text-align: center;
-    position: relative;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0.6);
-}
-
-section h2 {
-    font-size: 48px;
-    color: #FFD700;
-    margin-bottom: 40px;
-}
-
-.cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 30px;
-    margin-top: 40px;
-}
-
-.card {
-    background: rgba(17, 17, 17, 0.9);
-    padding: 30px;
-    border-radius: 20px;
-    border: 1px solid #FFD70033;
-    transition: 0.3s;
-}
-
-.card:hover {
-    border-color: #FFD700;
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-    transform: translateY(-10px);
-}
-
-.card h3 {
-    color: #FFD700;
-    margin-bottom: 15px;
-}
-
-footer {
-    padding: 30px;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.9);
-    color: #aaa;
-    position: relative;
-    z-index: 10;
-    border-top: 1px solid rgba(255, 215, 0, 0.2);
-}
-
-@media(max-width:700px) {
-    .hero h1 { font-size: 38px; }
-    .hero img { width: 130px; }
-    .nav-wrapper { flex-direction: column; gap: 15px; }
-    header { padding: 15px 5%; flex-direction: column; gap: 15px; }
-    nav { display: flex; flex-direction: column; gap: 10px; }
-    .auth-buttons { width: 100%; justify-content: center; }
-    section { padding: 60px 5%; }
-}
-</style>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Rynix Tech builds intelligent digital products at the edge of software, AI, and space technology.">
+  <title>Rynix Tech — Intelligence, engineered forward</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+<body class="site-shell">
+  <div id="galaxy" aria-hidden="true"></div>
+  <canvas id="stars" aria-hidden="true"></canvas>
 
-<body>
+  <header class="site-header">
+    <a class="brand" href="#home"><img src="IMG-20260716-WA0025.jpg" alt="Rynix Tech logo"> RYNIX TECH</a>
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a href="#about">About</a><a href="#services">Capabilities</a><a href="#contact">Contact</a>
+    </nav>
+    <div class="header-actions"><a class="button button-quiet" href="login.html">Log in</a><a class="button button-primary" href="signup.html">Get started</a></div>
+  </header>
 
-<div id="galaxy"></div>
-<canvas id="stars"></canvas>
+  <main>
+    <section class="hero" id="home">
+      <div>
+        <p class="eyebrow">Rynix Tech / Future systems</p>
+        <h1>Intelligence, <em>engineered</em> forward.</h1>
+        <p class="hero-text">We design ambitious digital systems where advanced software, artificial intelligence, and space-inspired thinking meet real-world momentum.</p>
+        <div class="hero-actions"><a class="button button-primary" href="#services">Explore capabilities <span aria-hidden="true">→</span></a><a class="button button-quiet" href="#contact">Talk to Rynix</a></div>
+        <div class="hero-proof" aria-label="Rynix Tech focus areas"><div><strong>AI</strong><span>Intelligent systems</span></div><div><strong>SPACE</strong><span>Frontier research</span></div><div><strong>BUILD</strong><span>Digital products</span></div></div>
+      </div>
+      <div class="orbit-card" aria-label="Rynix Tech signal visual">
+        <img class="hero-logo" src="IMG-20260716-WA0025.jpg" alt="Rynix Tech logo">
+        <div class="signal"><small>System signal</small><b><i></i>Innovation online</b></div>
+      </div>
+    </section>
 
-<header>
-    <div class="logo">
-        <img src="IMG-20260716-WA0025.jpg" alt="Rynix Tech Logo">
-        <span>RYNIX TECH</span>
-    </div>
+    <section class="home-section" id="services">
+      <div class="section-intro"><div><p class="eyebrow">What we create</p><h2 class="section-title">Technology with a mission.</h2></div><p class="section-copy">From first concept to launch, Rynix Tech turns complex ideas into focused, useful, and distinctive digital experiences.</p></div>
+      <div class="service-grid">
+        <article class="service-card"><div class="service-icon" aria-hidden="true">⌘</div><h3>Digital products</h3><p>High-performance websites and product experiences designed to make a sharp first impression and work beautifully on every screen.</p></article>
+        <article class="service-card"><div class="service-icon" aria-hidden="true">◈</div><h3>Applied intelligence</h3><p>Practical AI solutions that help modern teams automate, understand, and move faster with confidence.</p></article>
+        <article class="service-card"><div class="service-icon" aria-hidden="true">↗</div><h3>Frontier technology</h3><p>Space technology, cybersecurity, and emerging systems explored with curiosity, rigor, and long-term perspective.</p></article>
+      </div>
+    </section>
 
-    <div class="nav-wrapper">
-        <nav>
-            <a href="#home">Home</a>
-            <a href="#about">About</a>
-            <a href="#services">Services</a>
-            <a href="#contact">Contact</a>
-        </nav>
-        <div class="auth-buttons">
-            <a href="login.html" class="login-btn">Login</a>
-            <a href="signup.html" class="signup-btn">Sign Up</a>
-        </div>
-    </div>
-</header>
+    <section class="home-section" id="about">
+      <div class="about-panel"><div><p class="eyebrow">About Rynix</p><h2 class="section-title">Built for the next horizon.</h2></div><div><p>Rynix Tech is a future-facing technology brand. We believe great technology should feel both powerful and clear — combining bold visual thinking with useful, responsible engineering.</p><div class="capabilities" aria-label="Technology areas"><span>Artificial intelligence</span><span>Software engineering</span><span>Space research</span><span>Cybersecurity</span><span>Digital innovation</span></div></div></div>
+    </section>
 
-<section class="hero" id="home"> 
-    <img src="IMG-20260716-WA0025.jpg" alt="Rynix Tech Logo">
-    <h1>Welcome to Rynix Tech</h1>
-    <p>Building the Future with Technology, Artificial Intelligence, Space Research and Innovation.</p>
-    <a href="#about" class="button">Explore</a>
-</section>
-
-<section id="about">
-    <h2>About Us</h2>
-    <p>Rynix Tech is a futuristic technology brand focused on AI, software, space exploration, cybersecurity and innovative digital products.</p>
-</section>
-
-<section id="services">
-    <h2>Services</h2>
-    <div class="cards">
-        <div class="card">
-            <h3>🌐 Website Development</h3>
-            <p>Modern responsive websites with cutting-edge design.</p>
-        </div>
-        <div class="card">
-            <h3>🤖 Artificial Intelligence</h3>
-            <p>Next-generation AI solutions for your business.</p>
-        </div>
-        <div class="card">
-            <h3>🚀 Space Technology</h3>
-            <p>Future science and innovation at the edge of technology.</p>
-        </div>
-    </div>
-</section>
-
-<section id="contact">
-    <h2>Contact</h2>
-    <p>Get in touch with us</p>
-    <p style="margin-top: 20px;">
-        <a href="mailto:rynixtechgroup@gmail.com" style="color: #FFD700; text-decoration: none; font-size: 18px;">
-            📧 rynixtechgroup@gmail.com
-        </a>
-    </p>
-</section>
-
-<footer>
-    © 2026 Rynix Tech • All Rights Reserved
-</footer>
-
-<script src="script.js?v=2"></script>
-
+    <section class="home-section" id="contact">
+      <div class="contact-panel"><div><p class="eyebrow">Start a conversation</p><h2>Let’s build what’s next.</h2><p>Have a question, an opportunity, or an idea worth exploring?</p></div><a class="button button-primary" href="mailto:rynixtechgroup@gmail.com">rynixtechgroup@gmail.com <span aria-hidden="true">↗</span></a></div>
+    </section>
+  </main>
+  <footer class="site-footer">© 2026 Rynix Tech. Engineered for the future.</footer>
+  <script src="script.js"></script>
 </body>
 </html>
