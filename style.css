@@ -43,9 +43,8 @@ button { cursor: pointer; }
 .section-copy { color: var(--muted); line-height: 1.8; }
 
 /* Home */
-#galaxy { position: fixed; inset: -8%; z-index: -2; background: url('galaxy.jpg') center / cover no-repeat; opacity: .34; filter: saturate(1.18) contrast(1.1) brightness(.62); animation: drift 75s linear infinite; }
+#galaxy { display: none; }
 #stars { position: fixed; inset: 0; z-index: -1; display: block; width: 100%; height: 100%; pointer-events: none; }
-@keyframes drift { from { transform: rotate(0deg) scale(1.06); } to { transform: rotate(360deg) scale(1.06); } }
 
 .site-header { position: fixed; top: 18px; left: 50%; z-index: 20; display: flex; align-items: center; justify-content: space-between; width: min(1160px, calc(100% - 32px)); padding: 11px 14px 11px 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(7, 10, 25, .68); backdrop-filter: blur(18px); transform: translateX(-50%); box-shadow: 0 12px 35px rgba(0,0,0,.2); }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-family: "Space Grotesk", Arial, sans-serif; font-size: .94rem; font-weight: 700; letter-spacing: .06em; text-decoration: none; }
@@ -72,11 +71,8 @@ button { cursor: pointer; }
 .hero-proof strong { color: var(--gold-soft); font: 700 1.3rem "Space Grotesk", sans-serif; }
 .hero-proof span { color: var(--muted); font-size: .73rem; }
 .orbit-card { position: relative; display: grid; place-items: center; min-height: 410px; }
-.orbit-card::before, .orbit-card::after { content: ""; position: absolute; border: 1px solid rgba(162, 177, 255, .22); border-radius: 50%; }
-.orbit-card::before { width: 360px; height: 360px; animation: pulse 5s ease-in-out infinite; }
-.orbit-card::after { width: 290px; height: 290px; border-color: rgba(246,198,87,.35); animation: pulse 5s ease-in-out .8s infinite reverse; }
-@keyframes pulse { 50% { transform: scale(1.08); opacity: .45; } }
-.hero-logo { position: relative; z-index: 1; width: min(235px, 58vw); aspect-ratio: 1; border: 1px solid rgba(246,198,87,.6); border-radius: 35px; object-fit: cover; transform: rotate(-8deg); box-shadow: 0 0 0 15px rgba(246,198,87,.035), 0 35px 80px rgba(0,0,0,.45), 0 0 60px rgba(246,198,87,.22); }
+.orbit-card::before, .orbit-card::after { content: none; }
+.hero-logo { position: relative; z-index: 1; width: min(235px, 58vw); aspect-ratio: 1; border: none; border-radius: 35px; object-fit: contain; background: transparent; transform: rotate(-8deg); box-shadow: 0 35px 80px rgba(0,0,0,.45), 0 0 80px rgba(246,198,87,.18); }
 .signal { position: absolute; right: 4%; bottom: 8%; z-index: 2; width: 170px; padding: 13px; border: 1px solid var(--line); border-radius: 14px; background: rgba(11,16,37,.86); box-shadow: var(--shadow); }
 .signal small { display: block; color: var(--muted); font-size: .65rem; letter-spacing: .12em; text-transform: uppercase; }.signal b { color: var(--success); font-size: .82rem; }.signal i { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: var(--success); box-shadow: 0 0 12px var(--success); }
 .home-section { width: min(1160px, calc(100% - 40px)); margin: auto; padding: 110px 0; }
