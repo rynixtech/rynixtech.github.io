@@ -48,10 +48,11 @@ Instructions:
   // quick network check for firebase auth endpoint (identitytoolkit) to reveal unauthorized-domain quickly
   (async ()=>{
     try{
-      const res = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + (typeof firebase !== 'undefined' && firebase?.options?.apiKey ? firebase.options.apiKey : ''), { method: 'GET' });
+      const apiKey = auth?.app?.options?.apiKey || '';
+      const res = await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + apiKey, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) });
       log('identitytoolkit test: status', res.status, 'ok', res.ok);
     }catch(e){
-      log('identitytoolkit fetch error (expected without key):', e && e.message ? e.message : e);
+      log('identitytoolkit fetch error:', e && e.message ? e.message : e);
     }
   })();
 </script>

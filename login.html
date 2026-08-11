@@ -13,7 +13,7 @@
     <h1>Welcome back.</h1>
     <p>Sign in to return to the Rynix Tech home page.</p>
 
-    <form id="loginForm" onsubmit="return false;">
+    <form id="loginForm">
       <label class="form-field">Email
         <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
       </label>
@@ -25,7 +25,7 @@
         </div>
       </label>
 
-      <button id="loginBtn" class="button button-primary" type="button">
+      <button id="loginBtn" class="button button-primary" type="submit">
         Log in <span aria-hidden="true">→</span>
       </button>
 
@@ -46,6 +46,7 @@
     import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
     import { ensureUserProfile } from './auth.js';
 
+    const loginForm = document.getElementById('loginForm');
     const email = document.getElementById('email');
     const password = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
@@ -95,7 +96,10 @@
       }
     }
 
-    loginBtn.addEventListener('click', handleLogin);
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleLogin();
+    });
   </script>
 </body>
 </html>

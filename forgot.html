@@ -12,11 +12,11 @@
     <h1>Reset password.</h1>
     <p id="intro">Enter your email address to receive a password reset link.</p>
 
-    <form id="resetForm" onsubmit="return false;">
+    <form id="resetForm">
       <label class="form-field">Email
         <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
       </label>
-      <button id="sendBtn" class="button button-primary" type="button">
+      <button id="sendBtn" class="button button-primary" type="submit">
         Send reset link <span aria-hidden="true">→</span>
       </button>
     </form>
@@ -30,11 +30,12 @@
     import { auth } from './firebase.js';
     import { sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
 
+    const resetForm = document.getElementById('resetForm');
     const emailInput = document.getElementById('email');
     const sendBtn = document.getElementById('sendBtn');
     const message = document.getElementById('message');
 
-    sendBtn.addEventListener('click', async () => {
+    async function handleReset() {
       const email = emailInput.value.trim();
       message.textContent = '';
 
@@ -63,6 +64,11 @@
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send reset link →';
       }
+    }
+
+    resetForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      handleReset();
     });
   </script>
 </body>

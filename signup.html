@@ -106,8 +106,12 @@
         // Send standard Firebase email verification link
         await sendEmailVerification(user);
 
-        showSuccess('Verification email sent. Please check your email and click the verification link.');
+        showSuccess('Verification email sent! Redirecting to verification page…');
         signupBtn.textContent = 'Verification Email Sent ✓';
+
+        setTimeout(() => {
+          window.location.href = 'verify.html';
+        }, 1500);
 
       } catch (error) {
         let msg = error.message;
@@ -125,11 +129,6 @@
     }
 
     signupForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      handleSignup();
-    });
-
-    signupBtn.addEventListener('click', (e) => {
       e.preventDefault();
       handleSignup();
     });
