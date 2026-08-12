@@ -70,18 +70,18 @@ async function verifyOtp({ flow, email, code }) {
   });
 }
 
-exports.requestSignupOtp = onCall({ region: "us-central1", secrets: [RESEND_API_KEY, OTP_HASH_SECRET] }, async request => {
+exports.requestSignupOtp = onCall({ region: "us-central1", secrets: [RESEND_API_KEY, OTP_HASH_SECRET], enforceAppCheck: true }, async request => {
   try { const { email: rawEmail } = getData(request, ["email"]); const email = normalizeEmail(rawEmail); try { await admin.auth().getUserByEmail(email); throw new HttpsError("already-exists", "An account already exists for this email. Please log in."); } catch (error) { if (error.code !== "auth/user-not-found") throw error; } return await sendOtp({ flow: "signup", email }); } catch (error) { callError(error); }
 });
 
-exports.verifySignupOtp = onCall({ region: "us-central1", secrets: [OTP_HASH_SECRET] }, async request => {
+exports.verifySignupOtp = onCall({ region: "us-central1", secrets: [OTP_HASH_SECRET], enforceAppCheck: true }, async request => {
   try { const { email: rawEmail, password, code } = getData(request, ["email", "password", "code"]); const email = normalizeEmail(rawEmail); assertPassword(password); await verifyOtp({ flow: "signup", email, code }); const user = await admin.auth().createUser({ email, password, emailVerified: true }); await db.doc(`users/${user.uid}`).set({ email, role: "user", createdAt: admin.firestore.FieldValue.serverTimestamp() }); return { ok: true }; } catch (error) { callError(error); }
 });
 
-exports.requestPasswordResetOtp = onCall({ region: "us-central1", secrets: [RESEND_API_KEY, OTP_HASH_SECRET] }, async request => {
+exports.requestPasswordResetOtp = onCall({ region: "us-central1", secrets: [RESEND_API_KEY, OTP_HASH_SECRET], enforceAppCheck: true }, async request => {
   try { const { email: rawEmail } = getData(request, ["email"]); const email = normalizeEmail(rawEmail); try { await admin.auth().getUserByEmail(email); } catch (error) { if (error.code === "auth/user-not-found") return { ok: true, cooldownSeconds: Math.ceil(OTP_COOLDOWN_MS / 1000), expiresInSeconds: Math.ceil(OTP_TTL_MS / 1000) }; throw error; } return await sendOtp({ flow: "password-reset", email }); } catch (error) { callError(error); }
 });
 
-exports.verifyPasswordResetOtp = onCall({ region: "us-central1", secrets: [OTP_HASH_SECRET] }, async request => {
+exports.verifyPasswordResetOtp = onCall({ region: "us-central1", secrets: [OTP_HASH_SECRET], enforceAppCheck: true }, async request => {
   try { const { email: rawEmail, password, code } = getData(request, ["email", "password", "code"]); const email = normalizeEmail(rawEmail); assertPassword(password); await verifyOtp({ flow: "password-reset", email, code }); const user = await admin.auth().getUserByEmail(email); await admin.auth().updateUser(user.uid, { password }); return { ok: true }; } catch (error) { callError(error); }
 });

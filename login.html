@@ -56,7 +56,11 @@
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         await ensureUserProfile(user);
-        window.location.replace('index.html');
+        if (!user.emailVerified) {
+          window.location.replace('verify.html');
+        } else {
+          window.location.replace('index.html');
+        }
       }
     });
 
@@ -81,7 +85,11 @@
         const user = userCredential.user;
 
         await ensureUserProfile(user);
-        window.location.replace('index.html');
+        if (!user.emailVerified) {
+          window.location.replace('verify.html');
+        } else {
+          window.location.replace('index.html');
+        }
       } catch (error) {
         message.style.color = 'var(--danger)';
         let msg = error.message;

@@ -6,3 +6,4 @@ functions/.secret.local
 functions/.runtimeconfig.json
 functions/firebase-debug.log
 .firebase/
+test-firebase.html

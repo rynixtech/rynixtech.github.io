@@ -64,18 +64,40 @@
 
     onAuthStateChanged(auth, async (user) => {
       if (!headerActions) return;
+      headerActions.textContent = '';
       if (user) {
         const profile = await getUserProfile(user.uid) || await ensureUserProfile(user);
-        const displayName = profile?.displayName || user.displayName || user.email.split('@')[0];
-        headerActions.innerHTML = `
-          <a class="button button-quiet user-pill" href="dashboard.html" title="${user.email}">👤 ${displayName}</a>
-          <button class="button button-primary" type="button" onclick="logout()">Log out</button>
-        `;
+        const displayName = profile?.displayName || user.displayName || (user.email ? user.email.split('@')[0] : 'User');
+        
+        const userPill = document.createElement('a');
+        userPill.className = 'button button-quiet user-pill';
+        userPill.href = 'dashboard.html';
+        userPill.title = user.email || '';
+        userPill.textContent = `👤 ${displayName}`;
+
+        const logoutBtn = document.createElement('button');
+        logoutBtn.className = 'button button-primary';
+        logoutBtn.type = 'button';
+        logoutBtn.textContent = 'Log out';
+        logoutBtn.addEventListener('click', () => {
+          if (typeof window.logout === 'function') {
+            window.logout();
+          }
+        });
+
+        headerActions.append(userPill, logoutBtn);
       } else {
-        headerActions.innerHTML = `
-          <a class="button button-quiet" href="login.html">Log in</a>
-          <a class="button button-primary" href="signup.html">Get started</a>
-        `;
+        const loginLink = document.createElement('a');
+        loginLink.className = 'button button-quiet';
+        loginLink.href = 'login.html';
+        loginLink.textContent = 'Log in';
+
+        const signupLink = document.createElement('a');
+        signupLink.className = 'button button-primary';
+        signupLink.href = 'signup.html';
+        signupLink.textContent = 'Get started';
+
+        headerActions.append(loginLink, signupLink);
       }
     });
   </script>
