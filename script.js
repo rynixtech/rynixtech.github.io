@@ -1,6 +1,6 @@
 // ============================================
-// RYNIX TECH — CINEMATIC SHADER GALAXY BACKGROUND
-// Uses existing galaxy.jpg image with WebGL shaders
+// RYNIX TECH — HIGH-PERFORMANCE CINEMATIC SHADER GALAXY
+// Optimized WebGL & Responsive Asset Pipeline
 // ============================================
 
 (function () {
@@ -15,22 +15,25 @@
 
   const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth < 800;
 
-  // Renderer setup
+  // Optimized renderer setup
   const renderer = new THREE.WebGLRenderer({
     canvas: canvas,
-    antialias: true,
+    antialias: !isMobile,
     alpha: true,
     powerPreference: "high-performance"
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+  // Cap pixel ratio to prevent heavy 4K fragment overdraw (1.25 mobile, 1.5 desktop)
+  const maxPixelRatio = isMobile ? 1.25 : 1.5;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.setClearColor(0x050711, 1);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 3000);
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2500);
   camera.position.set(0, 0, 600);
 
-  // Mouse Parallax (desktop)
+  // Desktop Mouse Parallax
   let mouseX = 0, mouseY = 0;
   let targetMouseX = 0, targetMouseY = 0;
 
@@ -38,34 +41,46 @@
     window.addEventListener("mousemove", (e) => {
       targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
       targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
-    });
+    }, { passive: true });
   }
 
-  // Load existing galaxy.jpg texture
+  // Choose optimal image asset based on screen & WebP support
+  const galaxyAsset = isMobile ? "galaxy-mobile.webp" : "galaxy.webp";
+
   const textureLoader = new THREE.TextureLoader();
-  textureLoader.load("galaxy.jpg", (galaxyTexture) => {
+  textureLoader.load(
+    galaxyAsset,
+    (galaxyTexture) => { setupGalaxyScene(galaxyTexture); },
+    undefined,
+    () => {
+      // Fallback to galaxy.jpg if WebP load fails
+      textureLoader.load("galaxy.jpg", (fallbackTexture) => {
+        setupGalaxyScene(fallbackTexture);
+      });
+    }
+  );
+
+  function setupGalaxyScene(galaxyTexture) {
     galaxyTexture.minFilter = THREE.LinearFilter;
     galaxyTexture.magFilter = THREE.LinearFilter;
     galaxyTexture.generateMipmaps = false;
 
-    // Custom Shaders for organic 2D galaxy displacement & Z-depth bulge
+    // Optimized Shaders
     const vertexShader = `
       uniform float u_time;
       varying vec2 vUv;
-      varying vec3 vWorldPosition;
 
       void main() {
         vUv = uv;
         vec3 pos = position;
 
-        // Subtle 3D bulge at galaxy center (pushes core gently toward camera)
+        // Subtle center bulge
         vec2 center = vec2(0.5, 0.5);
         float dist = length(uv - center);
-        float coreBulge = (1.0 - smoothstep(0.0, 0.42, dist)) * 32.0;
+        float coreBulge = (1.0 - smoothstep(0.0, 0.42, dist)) * ${isMobile ? '18.0' : '30.0'};
         pos.z += coreBulge;
 
         vec4 worldPosition = modelMatrix * vec4(pos, 1.0);
-        vWorldPosition = worldPosition.xyz;
         gl_Position = projectionMatrix * viewMatrix * worldPosition;
       }
     `;
@@ -73,24 +88,19 @@
     const fragmentShader = `
       uniform sampler2D u_texture;
       uniform float u_time;
-      uniform vec2 u_resolution;
 
       varying vec2 vUv;
-      varying vec3 vWorldPosition;
 
-      // GLSL 2D Simplex Noise implementation
       vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
       float snoise(vec2 v) {
-        const vec4 C = vec4(0.211324865405187, 0.366025403784439,
-                 -0.577350269189626, 0.024390243902439);
+        const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
         vec2 i  = floor(v + dot(v, C.yy) );
         vec2 x0 = v -   i + dot(i, C.xx);
         vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
         vec4 x12 = x0.xyxy + C.xxzz;
         x12.xy -= i1;
         i = mod(i, 289.0);
-        vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
-        + i.x + vec3(0.0, i1.x, 1.0 ));
+        vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
         vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
         m = m*m; m = m*m;
         vec3 x = 2.0 * fract(p * C.www) - 1.0;
@@ -110,38 +120,28 @@
         vec2 distVec = uv - center;
         float dist = length(distVec);
 
-        // Core mask: center stays completely stable (0 displacement at core)
+        // Core mask keeps center stable
         float coreMask = smoothstep(0.02, 0.22, dist);
-
-        // Polar angle for spiral arm alignment
         float angle = atan(distVec.y, distVec.x);
 
-        // Tangential & radial direction vectors
         vec2 dirTangent = vec2(-distVec.y, distVec.x) / (dist + 0.0001);
         vec2 dirRadial = distVec / (dist + 0.0001);
 
-        // Organic multi-scale noise flow for dust lanes & nebulae
         float noise1 = snoise(uv * 3.2 + vec2(u_time * 0.025, u_time * 0.015));
-        float noise2 = snoise(uv * 6.5 - vec2(u_time * 0.035, u_time * 0.02));
-
-        // Spiral arm wave motion (slow, fluid, natural movement)
         float spiralArmPhase = angle * 2.5 - dist * 7.0 + u_time * 0.08;
         float spiralFlow = sin(spiralArmPhase) * 0.004;
 
-        // Combine subtle tangential arm flow and organic dust displacement
-        vec2 displacement = (dirTangent * (noise1 * 0.006 + spiralFlow) + dirRadial * (noise2 * 0.003)) * coreMask;
-
-        vec2 displacedUv = uv + displacement;
-        displacedUv = clamp(displacedUv, vec2(0.001), vec2(0.999));
+        vec2 displacement = (dirTangent * (noise1 * 0.005 + spiralFlow)) * coreMask;
+        vec2 displacedUv = clamp(uv + displacement, vec2(0.001), vec2(0.999));
 
         vec4 texColor = texture2D(u_texture, displacedUv);
 
-        // Subtle luminance-based star & nebula twinkling
+        // Subtle shimmering
         float luminance = dot(texColor.rgb, vec3(0.299, 0.587, 0.114));
-        float shimmer = sin(u_time * 0.5 + luminance * 15.0) * 0.035 * luminance;
+        float shimmer = sin(u_time * 0.5 + luminance * 15.0) * 0.03 * luminance;
         texColor.rgb += vec3(shimmer * 0.4, shimmer * 0.6, shimmer * 0.9);
 
-        // Smooth vignetting to blend galaxy edges into deep space background
+        // Edge vignette
         float edgeVignette = 1.0 - smoothstep(0.38, 0.50, dist);
         texColor.rgb = mix(texColor.rgb * 0.7, texColor.rgb, edgeVignette);
 
@@ -153,14 +153,15 @@
     const planeHeight = 900;
     const planeWidth = planeHeight * imgAspect;
 
-    const galaxyGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight, 128, 128);
+    // Reduced geometry grid: 32x32 mobile, 64x64 desktop for high GPU efficiency
+    const segs = isMobile ? 32 : 64;
+    const galaxyGeometry = new THREE.PlaneGeometry(planeWidth, planeHeight, segs, segs);
     const galaxyMaterial = new THREE.ShaderMaterial({
       vertexShader: vertexShader,
       fragmentShader: fragmentShader,
       uniforms: {
         u_texture: { value: galaxyTexture },
-        u_time: { value: 0 },
-        u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) }
+        u_time: { value: 0 }
       },
       transparent: true,
       depthWrite: false
@@ -170,11 +171,10 @@
     galaxyMesh.rotation.x = -0.15;
     scene.add(galaxyMesh);
 
-    // Overlay layered foreground 3D depth stars & space particles
-    const starCount = isMobile ? 800 : 2500;
+    // Layered Depth Star Field (400 stars mobile, 1200 desktop)
+    const starCount = isMobile ? 400 : 1200;
     const starPositions = new Float32Array(starCount * 3);
     const starColors = new Float32Array(starCount * 3);
-    const starSizes = new Float32Array(starCount);
 
     for (let i = 0; i < starCount; i++) {
       const i3 = i * 3;
@@ -185,76 +185,93 @@
       const temp = Math.random();
       if (temp < 0.2) {
         starColors[i3] = 0.7; starColors[i3 + 1] = 0.85; starColors[i3 + 2] = 1.0;
-      } else if (temp < 0.4) {
-        starColors[i3] = 1.0; starColors[i3 + 1] = 0.9; starColors[i3 + 2] = 0.7;
       } else {
         const w = 0.8 + Math.random() * 0.2;
         starColors[i3] = w; starColors[i3 + 1] = w; starColors[i3 + 2] = w;
       }
-      starSizes[i] = 1.0 + Math.random() * 2.5;
     }
 
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
     starGeo.setAttribute("color", new THREE.BufferAttribute(starColors, 3));
-    starGeo.setAttribute("size", new THREE.BufferAttribute(starSizes, 1));
 
     const starMat = new THREE.PointsMaterial({
-      size: 2.0,
+      size: isMobile ? 1.5 : 2.0,
       vertexColors: true,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.7,
       sizeAttenuation: true,
       depthWrite: false
     });
     const starPoints = new THREE.Points(starGeo, starMat);
     scene.add(starPoints);
 
-    // Animation Loop
+    // Animation Loop with Visibility Control
     const clock = new THREE.Clock();
+    let isVisible = true;
+    let animFrameId = null;
 
     function animate() {
-      requestAnimationFrame(animate);
+      if (!isVisible) return;
+      animFrameId = requestAnimationFrame(animate);
 
       const elapsed = clock.getElapsedTime();
       galaxyMaterial.uniforms.u_time.value = elapsed;
 
-      // Smooth camera parallax
       if (!isMobile) {
         mouseX += (targetMouseX - mouseX) * 0.03;
         mouseY += (targetMouseY - mouseY) * 0.03;
-        camera.position.x = mouseX * 35;
-        camera.position.y = -mouseY * 25;
+        camera.position.x = mouseX * 30;
+        camera.position.y = -mouseY * 20;
       } else {
-        // Automatic gentle mobile camera sway
-        camera.position.x = Math.sin(elapsed * 0.08) * 20;
-        camera.position.y = Math.cos(elapsed * 0.06) * 12;
+        camera.position.x = Math.sin(elapsed * 0.08) * 15;
+        camera.position.y = Math.cos(elapsed * 0.06) * 10;
       }
 
-      // Very slow floating space drift on Z axis
-      camera.position.z = 600 + Math.sin(elapsed * 0.04) * 20;
+      camera.position.z = 600 + Math.sin(elapsed * 0.04) * 15;
       camera.lookAt(0, 0, 0);
 
-      // Foreground star subtle drift
-      starPoints.rotation.z = elapsed * 0.00005;
+      starPoints.rotation.z = elapsed * 0.00004;
 
       renderer.render(scene, camera);
     }
 
-    animate();
+    // Pause WebGL rendering when hero section is not visible (scrolled past hero)
+    if ("IntersectionObserver" in window) {
+      const heroSection = document.getElementById("home") || canvas;
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          isVisible = entry.isIntersecting;
+          if (isVisible && !animFrameId) {
+            clock.start();
+            animate();
+          } else if (!isVisible && animFrameId) {
+            cancelAnimationFrame(animFrameId);
+            animFrameId = null;
+          }
+        });
+      }, { threshold: 0.05 });
 
-    // Resize Handler
+      observer.observe(heroSection);
+    } else {
+      animate();
+    }
+
+    // Debounced Resize Handler
+    let resizeTimer;
     window.addEventListener("resize", () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      galaxyMaterial.uniforms.u_resolution.value.set(w, h);
-    });
-  });
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        renderer.setSize(w, h);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }, 150);
+    }, { passive: true });
+  }
 
-  // Cleanup on unload
+  // Cleanup on page unload
   window.addEventListener("beforeunload", () => {
     renderer.dispose();
   });

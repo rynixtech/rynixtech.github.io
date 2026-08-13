@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
-
 :root {
   --bg: #050711;
   --surface: rgba(15, 20, 39, 0.72);
@@ -36,6 +34,7 @@ button { cursor: pointer; }
   background: radial-gradient(circle at 16% 4%, rgba(86, 107, 255, .18), transparent 28%),
     radial-gradient(circle at 90% 60%, rgba(0, 200, 255, .12), transparent 32%),
     linear-gradient(135deg, #050711 0%, #090d20 48%, #050711 100%);
+  transform: translateZ(0);
 }
 .eyebrow { margin: 0 0 14px; color: var(--gold); font-size: .73rem; font-weight: 800; letter-spacing: .17em; text-transform: uppercase; }
 .section-title, .hero h1, .auth-card h1, .dashboard-card h1 { font-family: "Space Grotesk", Arial, sans-serif; letter-spacing: -.055em; }
@@ -46,7 +45,7 @@ button { cursor: pointer; }
 #galaxy { display: none; }
 #stars { position: fixed; inset: 0; z-index: -1; display: block; width: 100%; height: 100%; pointer-events: none; }
 
-.site-header { position: fixed; top: 18px; left: 50%; z-index: 20; display: flex; align-items: center; justify-content: space-between; width: min(1160px, calc(100% - 32px)); padding: 11px 14px 11px 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(7, 10, 25, .68); backdrop-filter: blur(18px); transform: translateX(-50%); box-shadow: 0 12px 35px rgba(0,0,0,.2); }
+.site-header { position: fixed; top: 18px; left: 50%; z-index: 20; display: flex; align-items: center; justify-content: space-between; width: min(1160px, calc(100% - 32px)); padding: 11px 14px 11px 18px; border: 1px solid var(--line); border-radius: 18px; background: rgba(7, 10, 25, .75); backdrop-filter: blur(12px); transform: translateX(-50%) translateZ(0); box-shadow: 0 12px 35px rgba(0,0,0,.2); }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-family: "Space Grotesk", Arial, sans-serif; font-size: .94rem; font-weight: 700; letter-spacing: .06em; text-decoration: none; }
 .brand img { width: 35px; height: 35px; border: 1px solid rgba(246,198,87,.55); border-radius: 11px; object-fit: cover; box-shadow: 0 0 20px rgba(246,198,87,.25); }
 .site-nav { display: flex; align-items: center; gap: 26px; }

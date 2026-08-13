@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Rynix Tech builds intelligent digital products at the edge of software, AI, and space technology.">
   <title>Rynix Tech — Intelligence, engineered forward</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="preload" as="image" href="logo-transparent.webp" type="image/webp">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="site-shell">
@@ -12,7 +16,13 @@
   <canvas id="stars" aria-hidden="true"></canvas>
 
   <header class="site-header">
-    <a class="brand" href="#home"><img src="IMG-20260716-WA0025.jpg" alt="Rynix Tech logo"> RYNIX TECH</a>
+    <a class="brand" href="#home">
+      <picture>
+        <source srcset="brand-logo.webp" type="image/webp">
+        <img src="brand-logo.jpg" alt="Rynix Tech logo" width="35" height="35" loading="eager" decoding="async">
+      </picture>
+      RYNIX TECH
+    </a>
     <nav class="site-nav" aria-label="Primary navigation">
       <a href="#about">About</a><a href="#services">Capabilities</a><a href="#contact">Contact</a>
     </nav>
@@ -29,7 +39,10 @@
         <div class="hero-proof" aria-label="Rynix Tech focus areas"><div><strong>AI</strong><span>Intelligent systems</span></div><div><strong>SPACE</strong><span>Frontier research</span></div><div><strong>BUILD</strong><span>Digital products</span></div></div>
       </div>
       <div class="orbit-card" aria-label="Rynix Tech signal visual">
-        <img class="hero-logo" src="logo-transparent.png" alt="Rynix Tech logo">
+        <picture>
+          <source srcset="logo-transparent.webp" type="image/webp">
+          <img class="hero-logo" src="logo-transparent.png" alt="Rynix Tech logo" width="235" height="235" loading="eager" decoding="async">
+        </picture>
         <div class="signal"><small>System signal</small><b><i></i>Innovation online</b></div>
       </div>
     </section>
@@ -52,8 +65,8 @@
     </section>
   </main>
   <footer class="site-footer">© 2026 Rynix Tech. Engineered for the future.</footer>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="script.js"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script defer src="script.js"></script>
   <script type="module" src="auth.js"></script>
   <script type="module">
     import { auth } from './firebase.js';
