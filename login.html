@@ -34,6 +34,11 @@
     </form>
 
     <div class="message" id="message" role="status" aria-live="polite"></div>
+    <div id="resendContainer" style="display: none; margin-top: 14px;">
+      <button id="resendBtn" class="button button-quiet" type="button" style="width: 100%; font-size: 0.82rem;">
+        Resend verification email ✉
+      </button>
+    </div>
     <p class="auth-links">
       <a href="forgot.html">Forgot password?</a><br><br>
       New to Rynix? <a href="signup.html">Create an account</a>
@@ -43,7 +48,7 @@
   <script type="module" src="auth.js"></script>
   <script type="module">
     import { auth } from './firebase.js';
-    import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+    import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
     import { ensureUserProfile } from './auth.js';
 
     const loginForm = document.getElementById('loginForm');
@@ -51,16 +56,51 @@
     const password = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
     const message = document.getElementById('message');
+    const resendContainer = document.getElementById('resendContainer');
+    const resendBtn = document.getElementById('resendBtn');
 
-    // Auto-redirect if already logged in
+    let unverifiedUser = null;
+
+    // Auto-redirect if already logged in and verified
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        await ensureUserProfile(user);
-        if (!user.emailVerified) {
-          window.location.replace('verify.html');
-        } else {
-          window.location.replace('index.html');
+        try {
+          await user.reload();
+        } catch (err) {
+          console.warn('User reload error:', err);
         }
+        const currentUser = auth.currentUser;
+        if (currentUser && currentUser.emailVerified) {
+          await ensureUserProfile(currentUser);
+          window.location.replace('index.html');
+        } else if (currentUser && !currentUser.emailVerified) {
+          unverifiedUser = currentUser;
+          message.style.color = 'var(--danger)';
+          message.textContent = 'Please verify your email before logging in.';
+          resendContainer.style.display = 'block';
+        }
+      }
+    });
+
+    resendBtn.addEventListener('click', async () => {
+      const targetUser = auth.currentUser || unverifiedUser;
+      if (!targetUser) {
+        message.style.color = 'var(--danger)';
+        message.textContent = 'Please sign in first to resend verification email.';
+        return;
+      }
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Sending link…';
+      try {
+        await sendEmailVerification(targetUser);
+        message.style.color = 'var(--success)';
+        message.textContent = 'Verification email sent! Check your inbox or spam folder.';
+      } catch (err) {
+        message.style.color = 'var(--danger)';
+        message.textContent = err.message || 'Failed to send verification email.';
+      } finally {
+        resendBtn.disabled = false;
+        resendBtn.textContent = 'Resend verification email ✉';
       }
     });
 
@@ -69,6 +109,7 @@
       const passValue = password.value;
 
       message.textContent = '';
+      resendContainer.style.display = 'none';
 
       if (!emailValue || !passValue) {
         message.style.color = 'var(--danger)';
@@ -82,14 +123,27 @@
       try {
         await setPersistence(auth, browserLocalPersistence);
         const userCredential = await signInWithEmailAndPassword(auth, emailValue, passValue);
-        const user = userCredential.user;
+        let user = userCredential.user;
+
+        try {
+          await user.reload();
+        } catch (e) {
+          console.warn(e);
+        }
+        user = auth.currentUser || user;
+
+        if (!user.emailVerified) {
+          unverifiedUser = user;
+          message.style.color = 'var(--danger)';
+          message.textContent = 'Please verify your email before logging in.';
+          resendContainer.style.display = 'block';
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Log in →';
+          return;
+        }
 
         await ensureUserProfile(user);
-        if (!user.emailVerified) {
-          window.location.replace('verify.html');
-        } else {
-          window.location.replace('index.html');
-        }
+        window.location.replace('index.html');
       } catch (error) {
         message.style.color = 'var(--danger)';
         let msg = error.message;

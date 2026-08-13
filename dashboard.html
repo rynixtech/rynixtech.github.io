@@ -31,13 +31,17 @@
 
     onAuthStateChanged(auth, async (user) => {
       if (user) {
-        if (!user.emailVerified) {
-          window.location.replace('verify.html');
+        try {
+          await user.reload();
+        } catch (e) {}
+        const currentUser = auth.currentUser;
+        if (!currentUser || !currentUser.emailVerified) {
+          window.location.replace('login.html');
           return;
         }
-        const profile = await getUserProfile(user.uid) || await ensureUserProfile(user);
-        userEmailEl.textContent = user.email || 'Authenticated User';
-        userRoleEl.textContent = `Role: ${profile?.role || 'user'} • UID: ${user.uid.slice(0, 8)}…`;
+        const profile = await getUserProfile(currentUser.uid) || await ensureUserProfile(currentUser);
+        userEmailEl.textContent = currentUser.email || 'Authenticated User';
+        userRoleEl.textContent = `Role: ${profile?.role || 'user'} • UID: ${currentUser.uid.slice(0, 8)}…`;
       } else {
         window.location.replace('login.html');
       }

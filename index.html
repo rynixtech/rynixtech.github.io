@@ -65,14 +65,24 @@
     onAuthStateChanged(auth, async (user) => {
       if (!headerActions) return;
       headerActions.textContent = '';
+      
       if (user) {
-        const profile = await getUserProfile(user.uid) || await ensureUserProfile(user);
-        const displayName = profile?.displayName || user.displayName || (user.email ? user.email.split('@')[0] : 'User');
+        try {
+          await user.reload();
+        } catch (err) {
+          console.warn('Could not reload user session:', err);
+        }
+      }
+
+      const currentUser = auth.currentUser;
+      if (currentUser && currentUser.emailVerified === true) {
+        const profile = await getUserProfile(currentUser.uid) || await ensureUserProfile(currentUser);
+        const displayName = profile?.displayName || currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'User');
         
         const userPill = document.createElement('a');
         userPill.className = 'button button-quiet user-pill';
         userPill.href = 'dashboard.html';
-        userPill.title = user.email || '';
+        userPill.title = currentUser.email || '';
         userPill.textContent = `👤 ${displayName}`;
 
         const logoutBtn = document.createElement('button');
