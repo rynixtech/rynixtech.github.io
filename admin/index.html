@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Control Center — Rynix Tech</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <!-- Loading Overlay -->
+  <div id="auth-loading" class="auth-loading">
+    <div class="auth-loading-content">
+      <div class="loader-ring"></div>
+      <p>Verifying access…</p>
+    </div>
+  </div>
+
+  <!-- Access Denied Overlay -->
+  <div id="access-denied" class="access-denied" hidden>
+    <div class="access-denied-content">
+      <span class="denied-icon">⛔</span>
+      <h1>Access Denied</h1>
+      <p>This area is restricted to authorized personnel only.</p>
+      <p class="redirect-msg">Redirecting…</p>
+    </div>
+  </div>
+
+  <!-- App Shell -->
+  <div id="app-shell" class="app-shell" hidden>
+    <aside id="sidebar" class="sidebar"></aside>
+    <div class="main-wrapper">
+      <header id="header" class="top-header"></header>
+      <main id="app-content" class="app-content"></main>
+    </div>
+  </div>
+
+  <!-- Mobile sidebar overlay -->
+  <div id="sidebar-overlay" class="sidebar-overlay" hidden></div>
+
+  <script type="module" src="admin-auth.js"></script>
+  <script type="module" src="admin.js"></script>
+</body>
+</html>

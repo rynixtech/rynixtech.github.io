@@ -4,6 +4,7 @@ const { logger } = require("firebase-functions");
 const admin = require("firebase-admin");
 const { Resend } = require("resend");
 const { OTP_TTL_MS, OTP_COOLDOWN_MS, MAX_ATTEMPTS, normalizeEmail, assertPassword, createOtp, emailKey, hashOtp, safeEqual } = require("./otp");
+const adminFunctions = require("./admin");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -85,3 +86,10 @@ exports.requestPasswordResetOtp = onCall({ region: "us-central1", secrets: [RESE
 exports.verifyPasswordResetOtp = onCall({ region: "us-central1", secrets: [OTP_HASH_SECRET], enforceAppCheck: true }, async request => {
   try { const { email: rawEmail, password, code } = getData(request, ["email", "password", "code"]); const email = normalizeEmail(rawEmail); assertPassword(password); await verifyOtp({ flow: "password-reset", email, code }); const user = await admin.auth().getUserByEmail(email); await admin.auth().updateUser(user.uid, { password }); return { ok: true }; } catch (error) { callError(error); }
 });
+
+// ── Admin Cloud Functions ────────────────────────────────────────────
+exports.setInitialAdmin = adminFunctions.setInitialAdmin;
+exports.listUsers = adminFunctions.listUsers;
+exports.getAdminStats = adminFunctions.getAdminStats;
+exports.disableUser = adminFunctions.disableUser;
+exports.enableUser = adminFunctions.enableUser;

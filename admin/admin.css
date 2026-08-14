@@ -1,0 +1,734 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+
+:root {
+  --bg: #0a0e1a;
+  --bg-gradient: linear-gradient(145deg, #0a0e1a 0%, #0d1228 50%, #0a0e1a 100%);
+  --surface: #0f1425;
+  --surface-hover: #161c35;
+  --surface-active: #1c2440;
+  --surface-glass: rgba(15, 20, 37, 0.85);
+  --border: rgba(183, 202, 255, 0.10);
+  --border-hover: rgba(183, 202, 255, 0.18);
+  --text: #f4f7ff;
+  --text-secondary: #c4ccdf;
+  --muted: #7a84a1;
+  --gold: #f6c657;
+  --gold-soft: #ffe6a1;
+  --gold-bg: rgba(246, 198, 87, 0.08);
+  --cyan: #55dcff;
+  --cyan-bg: rgba(85, 220, 255, 0.08);
+  --success: #64dfac;
+  --success-bg: rgba(100, 223, 172, 0.08);
+  --danger: #ff758f;
+  --danger-bg: rgba(255, 117, 143, 0.08);
+  --warning: #f6c657;
+  --sidebar-width: 260px;
+  --header-height: 64px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
+  --shadow-md: 0 8px 32px rgba(0,0,0,0.25);
+  --shadow-lg: 0 20px 60px rgba(0,0,0,0.35);
+  --transition: 200ms ease;
+  --font-body: 'Manrope', system-ui, sans-serif;
+  --font-heading: 'Space Grotesk', system-ui, sans-serif;
+}
+
+/* ==========================================================================
+   1. Reset & Base
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg-gradient);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.5;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text);
+}
+
+a {
+  color: var(--gold);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+a:hover {
+  color: var(--gold-soft);
+}
+
+/* ==========================================================================
+   2. Auth Loading Overlay
+   ========================================================================== */
+.auth-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.5s ease, visibility 0.5s;
+}
+
+.auth-loading-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.spinner-ring {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 24px;
+}
+
+.auth-loading-text {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  color: var(--gold-soft);
+  letter-spacing: 0.5px;
+  animation: pulseOpacity 1.5s ease-in-out infinite;
+}
+
+/* ==========================================================================
+   3. Access Denied Overlay
+   ========================================================================== */
+.access-denied-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 26, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.access-denied-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.denied-icon {
+  width: 64px;
+  height: 64px;
+  color: var(--danger);
+  margin-bottom: 1.5rem;
+  animation: scaleIn 0.5s ease;
+}
+
+.access-denied-overlay h2 {
+  font-size: 2rem;
+  color: var(--danger);
+  margin-bottom: 0.75rem;
+}
+
+.access-denied-overlay p {
+  color: var(--text-secondary);
+  max-width: 400px;
+  margin-bottom: 2rem;
+}
+
+/* ==========================================================================
+   4. App Shell Layout
+   ========================================================================== */
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  min-height: 100vh;
+}
+
+.main-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+}
+
+/* ==========================================================================
+   5. Sidebar
+   ========================================================================== */
+.sidebar {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.sidebar-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand-logo {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-logo span {
+  color: var(--gold);
+}
+
+.sidebar-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.5rem 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition);
+  border-left: 3px solid transparent;
+}
+
+.nav-item:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  transform: translateX(2px);
+}
+
+.nav-item.active {
+  background: var(--gold-bg);
+  color: var(--gold);
+  border-left-color: var(--gold);
+}
+
+.sidebar-footer {
+  padding: 1.25rem 1.5rem;
+  border-top: 1px solid var(--border);
+  background: rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+}
+
+/* ==========================================================================
+   6. Top Header
+   ========================================================================== */
+.top-header {
+  height: var(--header-height);
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  width: 100%;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ==========================================================================
+   7. Main Content Area
+   ========================================================================== */
+.main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* ==========================================================================
+   8. Stat Cards Grid
+   ========================================================================== */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  transition: all var(--transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-md);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: var(--font-heading);
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   9. Data Tables
+   ========================================================================== */
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  padding: 1rem 1.5rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.2);
+  text-align: left;
+}
+
+.data-table td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.data-table tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+/* ==========================================================================
+   10. Forms & Inputs
+   ========================================================================== */
+.form-control {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  transition: all var(--transition);
+  outline: none;
+}
+
+.form-control:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-bg);
+}
+
+/* ==========================================================================
+   11. Buttons
+   ========================================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--gold) 0%, #d4a331 100%);
+  color: #000;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(246, 198, 87, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-secondary);
+}
+
+.btn-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(255, 117, 143, 0.2);
+}
+
+.btn-danger:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+/* ==========================================================================
+   12. Modals
+   ========================================================================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 26, 0.8);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  transform: scale(0.95);
+  transition: all 0.3s ease;
+  width: 100%;
+}
+.modal-sm { max-width: 400px; }
+.modal-md { max-width: 600px; }
+.modal-lg { max-width: 800px; }
+.modal-full { max-width: 95vw; height: 95vh; }
+
+.modal-backdrop.active .modal {
+  transform: scale(1);
+}
+
+/* ==========================================================================
+   13. Toast Notifications
+   ========================================================================== */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  width: 320px;
+  box-shadow: var(--shadow-md);
+  animation: slideInRight 0.3s ease forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 3px;
+  background: var(--gold);
+  animation: shrinkWidth 5s linear forwards;
+}
+
+/* ==========================================================================
+   14. File Upload Dropzone
+   ========================================================================== */
+.dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 3rem 2rem;
+  text-align: center;
+  background: rgba(0,0,0,0.1);
+  transition: all var(--transition);
+  cursor: pointer;
+}
+
+.dropzone:hover, .dropzone.drag-over {
+  border-color: var(--gold);
+  background: var(--gold-bg);
+}
+
+/* ==========================================================================
+   15. Badges/Pills
+   ========================================================================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.badge-success { background: var(--success-bg); color: var(--success); }
+.badge-warning { background: var(--gold-bg); color: var(--warning); }
+.badge-danger { background: var(--danger-bg); color: var(--danger); }
+.badge-muted { background: var(--surface-active); color: var(--muted); }
+
+/* ==========================================================================
+   16. Tabs
+   ========================================================================== */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  gap: 2rem;
+}
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 1rem 0;
+  color: var(--text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+.tab-btn.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+
+/* ==========================================================================
+   17. Skeleton Loaders
+   ========================================================================== */
+.skeleton {
+  background: var(--surface-active);
+  background-image: linear-gradient(90deg, rgba(255,255,255,0) 0, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+.skeleton-text { height: 1em; margin-bottom: 0.5rem; width: 100%; }
+.skeleton-card { height: 120px; border-radius: var(--radius-lg); }
+
+/* ==========================================================================
+   18. Image Grid
+   ========================================================================== */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+.image-card {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  aspect-ratio: 1;
+}
+.image-card img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.image-overlay {
+  position: absolute; inset: 0;
+  background: rgba(10,14,26,0.7);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity var(--transition);
+}
+.image-card:hover .image-overlay { opacity: 1; }
+
+/* ==========================================================================
+   19. Timeline / Activity
+   ========================================================================== */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before {
+  content: ''; position: absolute; left: 11px; top: 0; bottom: 0;
+  width: 2px; background: var(--border);
+}
+.timeline-item { position: relative; margin-bottom: 1.5rem; }
+.timeline-icon {
+  position: absolute; left: -2rem; width: 24px; height: 24px;
+  border-radius: 50%; background: var(--surface); border: 2px solid var(--gold);
+  z-index: 1;
+}
+
+/* ==========================================================================
+   20. Pagination
+   ========================================================================== */
+.pagination { display: flex; gap: 0.5rem; justify-content: center; margin-top: 2rem; }
+.page-btn {
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.page-btn.active { background: var(--gold); color: #000; border-color: var(--gold); }
+.page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ==========================================================================
+   21. Search Input
+   ========================================================================== */
+.search-wrapper { position: relative; width: 100%; max-width: 400px; }
+.search-input {
+  width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem;
+  border-radius: 20px; background: rgba(0,0,0,0.2);
+  border: 1px solid var(--border); color: var(--text);
+}
+.search-input:focus { border-color: var(--gold); outline: none; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+
+/* ==========================================================================
+   22. Custom Scrollbar
+   ========================================================================== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--surface-active); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ==========================================================================
+   23. Responsive
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar { position: fixed; transform: translateX(-100%); transition: transform var(--transition); }
+  .sidebar.open { transform: translateX(0); }
+}
+@media (max-width: 768px) {
+  .stats-grid { grid-template-columns: 1fr; }
+}
+
+/* ==========================================================================
+   24. Animations
+   ========================================================================== */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes shrinkWidth { from { width: 100%; } to { width: 0%; } }
+@keyframes shimmer { to { background-position-x: -200%; } }
+
+/* ==========================================================================
+   25. Utility Classes
+   ========================================================================== */
+.text-gold { color: var(--gold); }
+.text-success { color: var(--success); }
+.text-danger { color: var(--danger); }
+.text-muted { color: var(--muted); }
+.text-center { text-align: center; }
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-center { display: flex; justify-content: center; align-items: center; }
+.gap-1 { gap: 0.5rem; } .gap-2 { gap: 1rem; } .gap-3 { gap: 1.5rem; }
+.mt-1 { margin-top: 0.25rem; } .mb-1 { margin-bottom: 0.25rem; }
+.hidden { display: none; }
+.truncate { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ==========================================================================
+   26. Empty State
+   ========================================================================== */
+.empty-state { text-align: center; padding: 4rem 2rem; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius-lg); }
+
+/* ==========================================================================
+   27. Sidebar Mobile Toggle
+   ========================================================================== */
+.mobile-toggle { display: none; background: none; border: none; color: var(--text); font-size: 1.5rem; cursor: pointer; }
+@media (max-width: 1024px) { .mobile-toggle { display: block; } }
+
+/* ==========================================================================
+   28. Progress Bar
+   ========================================================================== */
+.progress { width: 100%; height: 6px; background: var(--surface-active); border-radius: 3px; overflow: hidden; }
+.progress-bar { height: 100%; background: var(--gold); transition: width 0.3s ease; }
+
+/* ==========================================================================
+   29. Tooltips
+   ========================================================================== */
+[data-tooltip] { position: relative; cursor: help; }
+[data-tooltip]:hover::before {
+  content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%;
+  transform: translateX(-50%); background: #000; color: #fff; padding: 0.4rem 0.75rem;
+  border-radius: 4px; font-size: 0.75rem; white-space: nowrap; z-index: 1000;
+}
+
+/* ==========================================================================
+   30. Content transitions
+   ========================================================================== */
+.page-enter { opacity: 0; transform: translateY(10px); }
+.page-enter-active { opacity: 1; transform: translateY(0); transition: opacity 300ms, transform 300ms; }
+.page-exit { opacity: 1; transform: translateY(0); }
+.page-exit-active { opacity: 0; transform: translateY(-10px); transition: opacity 300ms, transform 300ms; }
