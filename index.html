@@ -3,12 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050711">
   <meta name="description" content="Rynix Tech builds intelligent digital products at the edge of software, AI, and space technology.">
   <title>Rynix Tech — Intelligence, engineered forward</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
-  <link rel="preload" as="image" href="logo-transparent.webp" type="image/webp">
+  <link rel="preload" as="image" href="logo-transparent.webp" type="image/webp" fetchpriority="high">
+  <link rel="preload" as="image" href="galaxy.webp" type="image/webp">
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="site-shell">
@@ -67,7 +69,6 @@
   <footer class="site-footer">© 2026 Rynix Tech. Engineered for the future.</footer>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script defer src="script.js"></script>
-  <script type="module" src="auth.js"></script>
   <script type="module">
     import { auth } from './firebase.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';

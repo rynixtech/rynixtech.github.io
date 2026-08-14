@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050711">
   <meta name="description" content="Sign in to your Rynix Tech account.">
   <title>Log in — Rynix Tech</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -48,7 +49,6 @@
     </p>
   </main>
 
-  <script type="module" src="auth.js"></script>
   <script type="module">
     import { auth } from './firebase.js';
     import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
