@@ -504,22 +504,22 @@ export default {
       if (env.RESEND_API_KEY) {
         await fetch("https://api.resend.com/emails", {
           method: "POST",
-          headers: { "Authorization": \`Bearer \${env.RESEND_API_KEY}\`, "Content-Type": "application/json" },
+          headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             from: env.RESEND_FROM_EMAIL || "Rynix Tech System <onboarding@resend.dev>",
             to: [adminEmail],
             subject: "🚨 RYNIX TECH SYSTEM ALERT",
-            html: \`<h3>System Health Alert</h3>
+            html: `<h3>System Health Alert</h3>
 <pre>
 Severity: CRITICAL
 System: Cloudflare Worker Scheduled Monitor
-Problem: \${error.message}
-Detected: \${new Date().toISOString()}
+Problem: ${error.message}
+Detected: ${new Date().toISOString()}
 Automatic action: Recorded to Firestore
 Result: Failed
 Rollback: None
 Recommended action: Inspect Control Center Error Monitor immediately.
-</pre>\`
+</pre>`
           })
         });
       }
