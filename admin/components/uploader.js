@@ -1,149 +1,236 @@
-import { storage, db } from '../admin-firebase.js';
-import { ref, uploadBytesResumable, getDownloadURL } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js';
-import { collection, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+import { auth } from '../admin-firebase.js';
 
-export function createUploader(container, { accept = '*/*', multiple = true, maxSizeMB = 50, storagePath = 'uploads', category = 'general', onComplete, onError }) {
-  container.innerHTML = `
-    <div class="dropzone" style="border: 2px dashed rgba(183,202,255,0.2); border-radius: 8px; padding: 40px 20px; text-align: center; cursor: pointer; transition: all 0.2s; background: #0f1425;">
-      <div style="font-size: 3rem; margin-bottom: 10px;">☁️</div>
-      <h3 style="margin: 0 0 10px 0; color: #f4f7ff; font-family: 'Space Grotesk', sans-serif;">Drag & Drop files here</h3>
-      <p style="margin: 0; color: #aeb8d2; font-size: 0.9rem;">or click to browse (Max ${maxSizeMB}MB)</p>
-      <input type="file" style="display: none;" accept="${accept}" ${multiple ? 'multiple' : ''}>
-    </div>
-    <div class="upload-list" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px;"></div>
-  `;
-
-  const dropzone = container.querySelector('.dropzone');
-  const fileInput = container.querySelector('input[type="file"]');
-  const uploadList = container.querySelector('.upload-list');
-
-  dropzone.addEventListener('click', () => fileInput.click());
-
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropzone.addEventListener(eventName, preventDefaults, false);
-  });
-
-  function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
+export class SystemUploader {
+  static initUI() {
+    if (document.getElementById('system-upload-manager')) return;
+    const manager = document.createElement('div');
+    manager.id = 'system-upload-manager';
+    manager.style.cssText = 'position: fixed; bottom: 20px; right: 20px; width: 350px; max-height: 80vh; overflow-y: auto; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;';
+    document.body.appendChild(manager);
   }
 
-  ['dragenter', 'dragover'].forEach(eventName => {
-    dropzone.addEventListener(eventName, () => {
-      dropzone.style.borderColor = '#f6c657';
-      dropzone.style.background = 'rgba(246, 198, 87, 0.05)';
-    }, false);
-  });
-
-  ['dragleave', 'drop'].forEach(eventName => {
-    dropzone.addEventListener(eventName, () => {
-      dropzone.style.borderColor = 'rgba(183,202,255,0.2)';
-      dropzone.style.background = '#0f1425';
-    }, false);
-  });
-
-  dropzone.addEventListener('drop', (e) => {
-    const files = e.dataTransfer.files;
-    handleFiles(files);
-  });
-
-  fileInput.addEventListener('change', function() {
-    handleFiles(this.files);
-  });
-
-  function handleFiles(files) {
-    [...files].forEach(file => {
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        if (onError) onError(new Error(`File ${file.name} exceeds ${maxSizeMB}MB limit`));
-        return;
-      }
-      uploadFile(file);
-    });
-  }
-
-  function uploadFile(file) {
-    const fileId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const path = `${storagePath}/${fileId}_${safeName}`;
-    const storageRef = ref(storage, path);
+  static async upload(file, category = 'general', options = {}) {
+    this.initUI();
+    const manager = document.getElementById('system-upload-manager');
     
-    const fileEl = document.createElement('div');
-    fileEl.style.cssText = 'background: rgba(183,202,255,0.05); border: 1px solid rgba(183,202,255,0.1); border-radius: 6px; padding: 15px; display: flex; flex-direction: column; gap: 10px;';
-    fileEl.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="color: #f4f7ff; font-weight: 500; word-break: break-all;">${file.name}</span>
-        <button class="btn-cancel" style="background: none; border: none; color: #ff758f; cursor: pointer;">Cancel</button>
+    // File validation
+    const maxSize = (options.maxSizeMB || 500) * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert(`❌ Unsupported file size. Max allowed is ${options.maxSizeMB || 500}MB.`);
+      throw new Error('FILE_TOO_LARGE');
+    }
+
+    const card = document.createElement('div');
+    card.style.cssText = 'background: rgba(11, 16, 35, 0.95); border: 1px solid rgba(183,202,255,0.2); border-radius: 12px; padding: 15px; pointer-events: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); backdrop-filter: blur(10px); transition: all 0.3s ease;';
+    
+    const sizeStr = (file.size / 1024 / 1024).toFixed(2);
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.95rem; color: #f4f7ff;" title="${file.name}">${file.name}</div>
+        <button class="btn-cancel" style="background: none; border: none; color: #ff758f; cursor: pointer; padding: 0 0 0 10px; font-size: 1.2rem; line-height: 1;">×</button>
       </div>
-      <div style="width: 100%; height: 6px; background: rgba(183,202,255,0.1); border-radius: 3px; overflow: hidden;">
-        <div class="progress-bar" style="width: 0%; height: 100%; background: #55dcff; transition: width 0.2s;"></div>
+      <div style="font-size: 0.8rem; color: #aeb8d2; margin-bottom: 8px; display: flex; justify-content: space-between;">
+        <span class="status-text">VALIDATING...</span>
+        <span class="progress-text">0% • 0 / ${sizeStr} MB</span>
       </div>
-      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #aeb8d2;">
-        <span class="status-text">Starting...</span>
-        <span>${(file.size / 1024 / 1024).toFixed(2)} MB</span>
+      <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; margin-bottom: 8px;">
+        <div class="progress-bar" style="width: 0%; height: 100%; background: #55dcff; transition: width 0.2s, background 0.3s;"></div>
+      </div>
+      <div class="actions" style="display: none; justify-content: flex-end; gap: 10px;">
+        <button class="btn-retry" style="background: rgba(85,220,255,0.1); color: #55dcff; border: 1px solid rgba(85,220,255,0.3); padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Retry</button>
       </div>
     `;
-    
-    uploadList.appendChild(fileEl);
-    
-    const progressBar = fileEl.querySelector('.progress-bar');
-    const statusText = fileEl.querySelector('.status-text');
-    const cancelBtn = fileEl.querySelector('.btn-cancel');
-    
-    const uploadTask = uploadBytesResumable(storageRef, file);
-    
-    cancelBtn.addEventListener('click', () => {
-      uploadTask.cancel();
-      fileEl.remove();
-    });
+    manager.appendChild(card);
 
-    uploadTask.on('state_changed', 
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        progressBar.style.width = progress + '%';
-        statusText.textContent = `Uploading ${Math.round(progress)}%`;
-      }, 
-      (error) => {
-        statusText.textContent = 'Error: ' + error.message;
+    return new Promise((resolve, reject) => {
+      let xhr = null;
+      let timeoutTimer = null;
+      
+      const statusText = card.querySelector('.status-text');
+      const progressText = card.querySelector('.progress-text');
+      const progressBar = card.querySelector('.progress-bar');
+      const btnCancel = card.querySelector('.btn-cancel');
+      const btnRetry = card.querySelector('.btn-retry');
+      const actionsDiv = card.querySelector('.actions');
+
+      const cleanup = () => {
+        if (timeoutTimer) clearTimeout(timeoutTimer);
+      };
+
+      const setFailed = (msg) => {
+        cleanup();
+        statusText.textContent = `❌ ${msg}`;
         statusText.style.color = '#ff758f';
         progressBar.style.background = '#ff758f';
-        if (onError) onError(error);
-      }, 
-      async () => {
-        statusText.textContent = 'Processing...';
-        progressBar.style.background = '#64dfac';
-        cancelBtn.style.display = 'none';
+        actionsDiv.style.display = 'flex';
+        btnCancel.innerHTML = 'Close';
+      };
+
+      const setSuccess = (msg) => {
+        cleanup();
+        statusText.textContent = `✅ ${msg}`;
+        statusText.style.color = '#4ade80';
+        progressBar.style.background = '#4ade80';
+        progressBar.style.width = '100%';
+        btnCancel.innerHTML = 'Close';
+        setTimeout(() => {
+          card.style.opacity = '0';
+          setTimeout(() => card.remove(), 300);
+        }, 5000);
+      };
+
+      btnCancel.addEventListener('click', () => {
+        if (xhr) {
+          xhr.abort();
+          statusText.textContent = 'CANCELLED';
+        }
+        card.remove();
+        reject(new Error('UPLOAD_CANCELLED'));
+      });
+
+      const startUpload = async () => {
+        actionsDiv.style.display = 'none';
+        progressBar.style.background = '#55dcff';
+        statusText.style.color = '#aeb8d2';
+        progressBar.style.width = '0%';
+        progressText.textContent = `0% • 0 / ${sizeStr} MB`;
         
         try {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          statusText.textContent = 'AUTHORIZING...';
+          const token = await auth.currentUser.getIdToken(true);
           
-          const fileDoc = {
-            name: file.name,
-            storagePath: path,
-            type: file.type,
-            size: file.size,
-            contentType: file.type,
-            uploadedAt: serverTimestamp(),
-            category,
-            downloadURL
-          };
+          statusText.textContent = 'REQUESTING URL...';
+          const res = await fetch('https://rynixtech-control-center-worker.rynixtech.workers.dev/api/storage/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ filename: file.name, contentType: file.type || 'application/octet-stream', category })
+          });
           
-          const docRef = await addDoc(collection(db, 'files'), fileDoc);
-          
-          statusText.textContent = 'Complete';
-          if (onComplete) {
-            onComplete({ name: file.name, downloadURL, storagePath: path, fileId: docRef.id });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.message || data.error || `HTTP ${res.status}`);
           }
+          const data = await res.json();
+          if (!data.ok) {
+            throw new Error(data.message || data.error || 'Upload authorization failed');
+          }
+          const { url, objectKey } = data;
+
+          statusText.textContent = 'UPLOADING...';
           
-          setTimeout(() => {
-            fileEl.style.opacity = '0';
-            setTimeout(() => fileEl.remove(), 300);
-          }, 3000);
-        } catch (error) {
-          statusText.textContent = 'Error saving metadata';
-          statusText.style.color = '#ff758f';
-          if (onError) onError(error);
+          xhr = new XMLHttpRequest();
+          xhr.open('PUT', url, true);
+          xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+          
+          // Timeout detection (30 seconds of no progress)
+          const resetTimeout = () => {
+            if (timeoutTimer) clearTimeout(timeoutTimer);
+            timeoutTimer = setTimeout(() => {
+              xhr.abort();
+              setFailed('Upload timed out');
+              reject(new Error('UPLOAD_TIMEOUT'));
+            }, 30000);
+          };
+          resetTimeout();
+
+          xhr.upload.onprogress = (e) => {
+            resetTimeout();
+            if (e.lengthComputable) {
+              const percent = (e.loaded / e.total) * 100;
+              const loadedMB = (e.loaded / 1024 / 1024).toFixed(2);
+              progressBar.style.width = `${percent}%`;
+              progressText.textContent = `${Math.round(percent)}% • ${loadedMB} / ${sizeStr} MB`;
+            } else {
+              progressBar.style.width = '100%';
+              progressBar.style.background = 'repeating-linear-gradient(45deg, #55dcff, #55dcff 10px, #42b2ce 10px, #42b2ce 20px)';
+              progressText.textContent = `Uploading... (indeterminate)`;
+            }
+          };
+
+          xhr.onload = () => {
+            cleanup();
+            if (xhr.status >= 200 && xhr.status < 300) {
+              const R2_DOMAIN = 'https://assets.rynixtech.com';
+              const publicUrl = category === 'documents' 
+                  ? `https://rynixtech-control-center-worker.rynixtech.workers.dev/api/documents/${objectKey.split('/').pop()}`
+                  : `https://rynixtech-control-center-worker.rynixtech.workers.dev/${objectKey}`;
+
+              const uploadResult = {
+                name: file.name,
+                size: file.size,
+                contentType: file.type || 'application/octet-stream',
+                url: publicUrl,
+                fullPath: objectKey,
+                category
+              };
+
+              if (options.onSaveMetadata) {
+                statusText.textContent = 'SAVING METADATA...';
+                options.onSaveMetadata(uploadResult)
+                  .then(() => {
+                    setSuccess('Upload successful');
+                    resolve(uploadResult);
+                  })
+                  .catch((err) => {
+                    setFailed('File uploaded, but metadata save failed.');
+                    SystemUploader.logErrorToFirebase(file.name, category, 'METADATA_SAVE_FAILED: ' + err.message);
+                    reject(new Error('Metadata save failed'));
+                  });
+              } else {
+                setSuccess('Upload successful');
+                resolve(uploadResult);
+              }
+            } else {
+              setFailed(`HTTP ${xhr.status} Storage unavailable`);
+              SystemUploader.logErrorToFirebase(file.name, category, `HTTP ${xhr.status} Storage unavailable`);
+              reject(new Error(`Storage unavailable`));
+            }
+          };
+
+          xhr.onerror = () => {
+            cleanup();
+            setFailed('Cannot reach upload server');
+            SystemUploader.logErrorToFirebase(file.name, category, 'Cannot reach upload server (B2)');
+            reject(new Error('Cannot reach upload server'));
+          };
+
+          xhr.send(file);
+        } catch (err) {
+          cleanup();
+          let errorMsg = err.message || 'Unknown server error';
+          if (errorMsg === 'Failed to fetch' || errorMsg.includes('NetworkError')) {
+             errorMsg = 'Cannot reach upload server';
+          }
+          if (errorMsg.includes('Unauthorized') || errorMsg.includes('Missing or invalid Authorization')) {
+             errorMsg = 'Authentication expired';
+          }
+          setFailed(errorMsg);
+          SystemUploader.logErrorToFirebase(file.name, category, errorMsg);
+          reject(err);
         }
-      }
-    );
+      };
+
+      btnRetry.addEventListener('click', startUpload);
+      startUpload();
+    });
+  }
+
+  static async logErrorToFirebase(filename, category, errorMessage) {
+    try {
+      const { db } = await import('../admin-firebase.js');
+      const { collection, addDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+      await addDoc(collection(db, 'errors'), {
+        system: 'Upload System',
+        component: 'SystemUploader',
+        category: category,
+        filename: filename,
+        error: errorMessage,
+        timestamp: serverTimestamp(),
+        severity: 'WARNING',
+        status: 'Unresolved'
+      });
+    } catch (e) {
+      console.error('Failed to log upload error to Firestore', e);
+    }
   }
 }

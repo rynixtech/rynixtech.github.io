@@ -47,23 +47,23 @@ export async function render(container) {
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>\${icon} \${data.type || 'Error'}</td>
-                <td>\${(data.message || '').substring(0, 50)}...</td>
-                <td>\${data.pageUrl || 'N/A'}</td>
-                <td>\${data.count || 1}</td>
-                <td>\${data.lastSeen ? new Date(data.lastSeen.toDate()).toLocaleString() : 'N/A'}</td>
-                <td><span class="badge \${data.status === 'resolved' ? 'success' : 'danger'}">\${data.status || 'open'}</span></td>
+                <td>${icon} ${data.type || 'Error'}</td>
+                <td>${(data.message || '').substring(0, 50)}...</td>
+                <td>${data.pageUrl || 'N/A'}</td>
+                <td>${data.count || 1}</td>
+                <td>${data.lastSeen ? new Date(data.lastSeen.toDate()).toLocaleString() : 'N/A'}</td>
+                <td><span class="badge ${data.status === 'resolved' ? 'success' : 'danger'}">${data.status || 'open'}</span></td>
                 <td>
-                    \${data.status !== 'resolved' ? \`<button class="btn resolve-btn" data-id="\${docSnap.id}">Resolve</button>\` : ''}
-                    <button class="btn danger delete-btn" data-id="\${docSnap.id}">Delete</button>
+                    ${data.status !== 'resolved' ? \`<button class="btn resolve-btn" data-id="${docSnap.id}">Resolve</button>\` : ''}
+                    <button class="btn danger delete-btn" data-id="${docSnap.id}">Delete</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
 
         document.getElementById('error-stats').innerHTML = `
-            <span class="badge">Total: \${totalCount}</span>
-            <span class="badge danger">Open: \${openCount}</span>
+            <span class="badge">Total: ${totalCount}</span>
+            <span class="badge danger">Open: ${openCount}</span>
         `;
         
         document.querySelectorAll('.resolve-btn').forEach(btn => {

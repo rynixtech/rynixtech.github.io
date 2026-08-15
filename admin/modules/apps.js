@@ -130,17 +130,34 @@ async function saveApp() {
     try {
         if(fileInput.files.length > 0) {
             const file = fileInput.files[0];
-            const storageRef = ref(storage, `admin/apks/${Date.now()}_${file.name}`);
-            const snapshot = await uploadBytesResumable(storageRef, file);
-            appData.downloadUrl = await getDownloadURL(snapshot.ref);
-            appData.fullPath = snapshot.ref.fullPath;
-        }
-
-        if(id) {
-            await updateDoc(doc(db, 'apps', id), appData);
+            const { SystemUploader } = await import('../components/uploader.js');
+            await SystemUploader.upload(file, 'apks', { 
+                maxSizeMB: 500,
+                onSaveMetadata: async (result) => {
+                    appData.downloadUrl = result.url;
+                    appData.fullPath = result.fullPath;
+                    
+                    if(id) {
+                        await updateDoc(doc(db, 'apps', id), appData);
+                    } else {
+                        appData.createdAt = serverTimestamp();
+                        await addDoc(collection(db, 'apps'), appData);
+                    }
+                    
+                    await addDoc(collection(db, 'activityLog'), {
+                        actionText: `Uploaded APK ${result.name}`,
+                        actionIcon: '📦',
+                        timestamp: serverTimestamp()
+                    });
+                }
+            });
         } else {
-            appData.createdAt = serverTimestamp();
-            await addDoc(collection(db, 'apps'), appData);
+            if(id) {
+                await updateDoc(doc(db, 'apps', id), appData);
+            } else {
+                appData.createdAt = serverTimestamp();
+                await addDoc(collection(db, 'apps'), appData);
+            }
         }
         
         document.getElementById('app-modal').style.display = 'none';

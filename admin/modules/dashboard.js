@@ -1,6 +1,7 @@
 import { db, functions } from '../admin-firebase.js';
 import { collection, query, orderBy, limit, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
-import { httpsCallable } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js';
+import { getFunctions } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js';
+import { httpsCallable } from '../admin-firebase.js';
 
 export async function render(container) {
     container.innerHTML = `
@@ -27,12 +28,17 @@ export async function render(container) {
             <div class="dashboard-module">
                 <h2>Dashboard Overview</h2>
                 
-                <div class="system-status" style="margin-bottom: 24px; padding: 16px; background: #0f1425; border-radius: 8px;">
-                    <h3 style="margin-top: 0;">System Status</h3>
-                    <div style="display: flex; gap: 20px;">
-                        <div>Firebase Auth: <span style="color: #64dfac;">● Connected</span></div>
-                        <div>Firestore: <span style="color: #64dfac;">● Connected</span></div>
-                        <div>Storage: <span style="color: #64dfac;">● Connected</span></div>
+                <div class="quick-actions" style="margin-bottom: 32px; padding: 20px; background: #0f1425; border-radius: 8px;">
+                    <h3 style="margin-top: 0;">Quick Actions</h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                        <button class="btn btn-primary" onclick="window.location.hash='#products'">+ Add Product</button>
+                        <button class="btn btn-primary" onclick="window.location.hash='#books'">+ Add Book</button>
+                        <button class="btn btn-primary" onclick="window.location.hash='#images'">+ Upload Image</button>
+                        <button class="btn btn-primary" onclick="window.location.hash='#videos'">+ Upload Video</button>
+                        <button class="btn btn-primary" onclick="window.location.hash='#apk_manager'">+ Upload APK</button>
+                        <button class="btn btn-ghost" onclick="window.location.hash='#coupons'">+ Create Coupon</button>
+                        <button class="btn btn-ghost" onclick="window.location.hash='#banners'">+ Publish Banner</button>
+                        <button class="btn btn-ghost" onclick="window.location.hash='#all_orders'">View Orders →</button>
                     </div>
                 </div>
 
@@ -50,12 +56,24 @@ export async function render(container) {
                         <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.orders)}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
+                        <div style="color: #aeb8d2; font-size: 0.9em;">💰 Revenue</div>
+                        <div style="font-size: 2em; color: #64dfac;">$${formatNumber(stats.revenue || 0)}</div>
+                    </div>
+                    <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">📁 Files</div>
                         <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.files)}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">📱 Apps</div>
                         <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.apps)}</div>
+                    </div>
+                    <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
+                        <div style="color: #aeb8d2; font-size: 0.9em;">📖 Books</div>
+                        <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.books || 0)}</div>
+                    </div>
+                    <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
+                        <div style="color: #aeb8d2; font-size: 0.9em;">💾 Storage Used</div>
+                        <div style="font-size: 2em; color: #f4f7ff;">${stats.storageUsed || '0 MB'}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">⚠️ Active Errors</div>

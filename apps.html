@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050711">
+  <title>App Store — Rynix Tech</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .store-container { max-width: 1160px; margin: 40px auto; padding: 0 20px; }
+    
+    .search-section { text-align: center; margin-bottom: 60px; }
+    .search-section h1 { font-size: 3rem; margin-bottom: 15px; font-family: 'Space Grotesk', sans-serif; }
+    .search-section p { color: var(--muted); font-size: 1.1rem; margin-bottom: 35px; }
+    .search-bar { position: relative; max-width: 600px; margin: 0 auto; }
+    .search-bar input { width: 100%; padding: 18px 25px; border-radius: 99px; background: rgba(11, 16, 35, 0.82); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 1.1rem; backdrop-filter: blur(18px); transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+    .search-bar input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(246,198,87,0.1); }
+
+    .content-section { margin-bottom: 70px; }
+    .section-header { margin-bottom: 25px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+    .section-header h2 { font-size: 1.6rem; margin: 0; font-family: 'Space Grotesk', sans-serif; }
+
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 30px; }
+    .app-card { display: flex; align-items: center; gap: 20px; background: rgba(11, 16, 35, 0.82); border: 1px solid var(--line); border-radius: 20px; padding: 25px; transition: transform 0.2s, border-color 0.2s; backdrop-filter: blur(18px); }
+    .app-card:hover { transform: translateY(-5px); border-color: rgba(246,198,87,0.5); }
+    .app-icon { width: 80px; height: 80px; background: rgba(0,0,0,0.3); border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; color: var(--muted); border: 1px solid rgba(255,255,255,0.05); }
+    .app-details { flex: 1; }
+    .app-details h3 { margin: 0 0 5px 0; font-size: 1.2rem; }
+    .app-details .desc { color: var(--muted); font-size: 0.85rem; margin-bottom: 10px; line-height: 1.4; }
+    .app-details .meta { color: var(--gold-soft); font-weight: 700; font-size: 0.9rem; margin-bottom: 10px; display: flex; gap: 10px; }
+  </style>
+</head>
+<body class="site-shell">
+  <div id="galaxy" aria-hidden="true"></div>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <a class="brand" href="index.html">RYNIX TECH</a>
+    <div class="header-actions">
+      <a class="button button-quiet" href="dashboard.html">My Account</a>
+    </div>
+  </header>
+
+  <main class="store-container">
+    <div class="search-section">
+      <h1>App Store</h1>
+      <p>Download our secure digital applications and APKs.</p>
+      <div class="search-bar">
+        <input type="text" placeholder="Search applications..." aria-label="Search Apps">
+      </div>
+    </div>
+    
+    <section class="content-section">
+      <div class="section-header">
+        <h2>Featured Apps</h2>
+      </div>
+      <div class="product-grid">
+        <article class="app-card">
+          <div class="app-icon">Icon</div>
+          <div class="app-details">
+            <h3>Rynix Secure Vault</h3>
+            <div class="desc">Enterprise-grade secure local storage app.</div>
+            <div class="meta"><span>v1.2.0</span><span>15 MB</span></div>
+            <button class="button button-quiet" style="width:100%; min-height: 35px; font-size: 0.8rem;">Download</button>
+          </div>
+        </article>
+        <article class="app-card">
+          <div class="app-icon">Icon</div>
+          <div class="app-details">
+            <h3>Orbit Analytics</h3>
+            <div class="desc">Real-time edge performance monitoring.</div>
+            <div class="meta"><span>v2.0.1</span><span>22 MB</span></div>
+            <button class="button button-quiet" style="width:100%; min-height: 35px; font-size: 0.8rem;">Download</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

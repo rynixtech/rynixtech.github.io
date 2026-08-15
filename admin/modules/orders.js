@@ -87,8 +87,8 @@ export async function render(container) {
                 await updateDoc(doc(db, 'orders', id), { status: newStatus });
                 await addDoc(collection(db, 'activityLog'), {
                     action: 'status-change',
-                    resource: \`order \${id}\`,
-                    details: \`Status changed to \${newStatus}\`,
+                    resource: \`order ${id}\`,
+                    details: \`Status changed to ${newStatus}\`,
                     timestamp: serverTimestamp()
                 });
                 loadOrders();

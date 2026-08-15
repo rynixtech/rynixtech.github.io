@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050711">
+  <title>OS Store — Rynix Tech</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .store-container { max-width: 1200px; margin: 60px auto; padding: 0 20px; }
+    
+    .search-section { text-align: center; margin-bottom: 70px; }
+    .search-section h1 { font-size: 3.5rem; margin-bottom: 15px; font-family: 'Space Grotesk', sans-serif; letter-spacing: -0.03em; }
+    .search-section p { color: var(--muted); font-size: 1.15rem; margin-bottom: 35px; max-width: 600px; margin-left: auto; margin-right: auto; }
+    .search-bar { position: relative; max-width: 650px; margin: 0 auto; }
+    .search-bar input { width: 100%; padding: 22px 30px; border-radius: 99px; background: rgba(11, 16, 35, 0.82); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 1.1rem; backdrop-filter: blur(18px); transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+    .search-bar input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(246,198,87,0.1); }
+    .search-icon { position: absolute; right: 25px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; pointer-events: none; opacity: 0.5; }
+
+    .content-section { margin-bottom: 80px; }
+    .section-header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--line); padding-bottom: 15px; margin-bottom: 30px; }
+    .section-header h2 { font-size: 1.8rem; margin: 0; font-family: 'Space Grotesk', sans-serif; }
+    
+    .featured-os-card {
+      background: linear-gradient(145deg, rgba(24, 30, 57, 0.79), rgba(10, 14, 29, 0.9));
+      border: 1px solid var(--gold-soft);
+      border-radius: 24px;
+      padding: 40px;
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 50px;
+      position: relative;
+      overflow: hidden;
+    }
+    .featured-os-card::before { content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at top right, rgba(246, 198, 87, 0.05), transparent 50%); pointer-events: none; }
+    .os-title { font-size: 3rem; margin: 0 0 10px 0; line-height: 1.1; font-family: 'Space Grotesk', sans-serif; }
+    .os-badge { display: inline-block; padding: 6px 14px; background: rgba(74, 222, 128, 0.1); color: #4ade80; border-radius: 20px; font-size: 0.8rem; font-weight: 700; margin-bottom: 20px; border: 1px solid rgba(74,222,128,0.2); }
+    
+    .tech-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 30px 0; }
+    .spec-item { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+    .spec-item span { display: block; color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+    .spec-item strong { font-size: 1.05rem; color: #fff; }
+
+    .os-actions { display: flex; gap: 15px; margin-top: 35px; }
+    .os-actions .button { min-height: 50px; font-size: 0.95rem; padding: 0 25px; }
+
+    .release-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 25px; }
+    .release-card { background: rgba(11, 16, 35, 0.7); border: 1px solid var(--line); border-radius: 20px; padding: 25px; transition: transform 0.2s, border-color 0.2s; backdrop-filter: blur(10px); }
+    .release-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); }
+    .release-card h3 { margin: 0 0 8px 0; font-size: 1.35rem; }
+    .release-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+    .meta-tag { background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; color: var(--muted); border: 1px solid rgba(255,255,255,0.05); }
+    
+    .release-desc { font-size: 0.9rem; color: var(--muted); line-height: 1.6; margin-bottom: 25px; }
+    
+    .download-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
+    .download-size { font-size: 0.85rem; color: var(--muted); font-family: monospace; }
+    
+    @media (max-width: 900px) {
+      .featured-os-card { grid-template-columns: 1fr; gap: 30px; }
+      .tech-specs { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 500px) {
+      .tech-specs { grid-template-columns: 1fr; }
+      .search-section h1 { font-size: 2.5rem; }
+      .os-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body class="site-shell">
+  <div id="galaxy" aria-hidden="true"></div>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <a class="brand" href="index.html">RYNIX TECH</a>
+    <div class="header-actions">
+      <a class="button button-quiet" href="dashboard.html">My Account</a>
+    </div>
+  </header>
+
+  <main class="store-container">
+    <div class="search-section">
+      <h1>Operating Systems</h1>
+      <p>Discover, explore, and download Rynix OS architectures, from edge devices to high-performance secure environments.</p>
+      <div class="search-bar">
+        <input type="text" placeholder="Search builds, architectures, or releases..." aria-label="Search OS">
+        <div class="search-icon">🔍</div>
+      </div>
+    </div>
+    
+    <section class="content-section">
+      <div class="section-header">
+        <h2>Featured OS</h2>
+      </div>
+      
+      <div class="featured-os-card">
+        <div>
+          <span class="os-badge">Stable Release</span>
+          <h3 class="os-title">Rynix OS Core</h3>
+          <p style="color: var(--muted); font-size: 1.1rem; max-width: 500px; line-height: 1.6;">
+            A lightweight, secure, and incredibly fast operating system built for developers and edge computing architectures. Complete isolation by design.
+          </p>
+          
+          <div class="tech-specs">
+            <div class="spec-item">
+              <span>Version</span>
+              <strong>1.4.2 (LTS)</strong>
+            </div>
+            <div class="spec-item">
+              <span>Architecture</span>
+              <strong>ARM64 / x86_64</strong>
+            </div>
+            <div class="spec-item">
+              <span>Build</span>
+              <strong>#89234</strong>
+            </div>
+            <div class="spec-item">
+              <span>Platform</span>
+              <strong>Desktop / Server</strong>
+            </div>
+            <div class="spec-item">
+              <span>Size</span>
+              <strong>1.2 GB</strong>
+            </div>
+            <div class="spec-item">
+              <span>Release</span>
+              <strong>Aug 2026</strong>
+            </div>
+          </div>
+          
+          <div class="os-actions">
+            <button class="button button-primary">Download ISO</button>
+            <button class="button button-quiet">View Changelog</button>
+            <button class="button button-quiet">Documentation</button>
+          </div>
+        </div>
+        
+        <div style="background: rgba(0,0,0,0.5); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; min-height: 300px; color: var(--muted);">
+          [ Screenshot / UI Preview ]
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section">
+      <div class="section-header">
+        <h2>Latest Releases</h2>
+        <a href="#" style="color: var(--gold-soft); font-size: 0.9rem; text-decoration: none; font-weight: 700;">View all releases →</a>
+      </div>
+      
+      <div class="release-grid">
+        <article class="release-card">
+          <h3>Rynix OS Nano</h3>
+          <div class="release-meta">
+            <span class="meta-tag">v0.9.1 Beta</span>
+            <span class="meta-tag">IoT / Edge</span>
+            <span class="meta-tag">ARM32</span>
+          </div>
+          <p class="release-desc">Ultra-minimalist kernel for embedded devices. Includes new GPIO security isolation modules.</p>
+          <div class="download-row">
+            <span class="download-size">Size: 45 MB</span>
+            <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;">Download IMG</button>
+          </div>
+        </article>
+        
+        <article class="release-card">
+          <h3>Rynix Workspace</h3>
+          <div class="release-meta">
+            <span class="meta-tag">v2.1.0 Stable</span>
+            <span class="meta-tag">Enterprise Desktop</span>
+            <span class="meta-tag">x86_64</span>
+          </div>
+          <p class="release-desc">Full desktop environment with integrated developer tools and hardware-backed credential storage.</p>
+          <div class="download-row">
+            <span class="download-size">Size: 2.4 GB</span>
+            <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;">Download ISO</button>
+          </div>
+        </article>
+        
+        <article class="release-card">
+          <h3>Rynix Server Core</h3>
+          <div class="release-meta">
+            <span class="meta-tag">v1.4.2 Stable</span>
+            <span class="meta-tag">Cloud / Server</span>
+            <span class="meta-tag">Multi-arch</span>
+          </div>
+          <p class="release-desc">Headless server distribution optimized for container orchestration and massive IO throughput.</p>
+          <div class="download-row">
+            <span class="download-size">Size: 450 MB</span>
+            <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;">Download ISO</button>
+          </div>
+        </article>
+      </div>
+    </section>
+    
+    <section class="content-section">
+      <div class="section-header">
+        <h2>Recently Updated</h2>
+      </div>
+      <div class="release-grid">
+         <article class="release-card">
+          <h3>Rynix OS Core Patch</h3>
+          <div class="release-meta">
+            <span class="meta-tag">Build #89235</span>
+            <span class="meta-tag">Hotfix</span>
+          </div>
+          <p class="release-desc">Security patch addressing a minor vulnerability in the networking stack. Recommended for all users.</p>
+          <div class="download-row">
+            <span class="download-size">Updated: 2 days ago</span>
+            <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;">Read Notes</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>

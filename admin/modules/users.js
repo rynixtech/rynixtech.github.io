@@ -1,5 +1,6 @@
 import { db } from '../admin-firebase.js';
-import { getFunctions, httpsCallable } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js';
+import { getFunctions } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js';
+import { httpsCallable } from '../admin-firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -48,27 +49,27 @@ export async function render(container) {
             const result = await listUsers({ pageSize: 20 });
             const users = result.data.users;
             
-            document.getElementById('users-count').innerText = \`Total loaded: \${users.length}\`;
+            document.getElementById('users-count').innerText = \`Total loaded: ${users.length}\`;
             tbody.innerHTML = '';
             
             users.forEach(user => {
                 const tr = document.createElement('tr');
                 const avatar = user.photoURL 
-                    ? \`<img src="\${user.photoURL}" width="32" height="32" style="border-radius:50%">\` 
-                    : \`<div style="width:32px;height:32px;border-radius:50%;background:#55dcff;display:flex;align-items:center;justify-content:center;color:#0a0e1a;font-weight:bold;">\${(user.email || 'U')[0].toUpperCase()}</div>\`;
+                    ? \`<img src="${user.photoURL}" width="32" height="32" style="border-radius:50%">\` 
+                    : \`<div style="width:32px;height:32px;border-radius:50%;background:#55dcff;display:flex;align-items:center;justify-content:center;color:#0a0e1a;font-weight:bold;">${(user.email || 'U')[0].toUpperCase()}</div>\`;
                 
                 tr.innerHTML = `
-                    <td>\${avatar}</td>
-                    <td>\${user.displayName || 'N/A'}</td>
-                    <td>\${user.email}</td>
-                    <td>\${user.emailVerified ? '✓' : '✗'}</td>
-                    <td><span class="badge \${user.disabled ? 'danger' : 'success'}">\${user.disabled ? 'Disabled' : 'Enabled'}</span></td>
-                    <td>\${new Date(user.metadata.creationTime).toLocaleDateString()}</td>
-                    <td>\${new Date(user.metadata.lastSignInTime).toLocaleDateString()}</td>
+                    <td>${avatar}</td>
+                    <td>${user.displayName || 'N/A'}</td>
+                    <td>${user.email}</td>
+                    <td>${user.emailVerified ? '✓' : '✗'}</td>
+                    <td><span class="badge ${user.disabled ? 'danger' : 'success'}">${user.disabled ? 'Disabled' : 'Enabled'}</span></td>
+                    <td>${new Date(user.metadata.creationTime).toLocaleDateString()}</td>
+                    <td>${new Date(user.metadata.lastSignInTime).toLocaleDateString()}</td>
                     <td>
-                        <button class="btn view-user" data-uid="\${user.uid}">View</button>
-                        <button class="btn \${user.disabled ? 'success' : 'danger'} toggle-user" data-uid="\${user.uid}" data-disabled="\${user.disabled}">
-                            \${user.disabled ? 'Enable' : 'Disable'}
+                        <button class="btn view-user" data-uid="${user.uid}">View</button>
+                        <button class="btn ${user.disabled ? 'success' : 'danger'} toggle-user" data-uid="${user.uid}" data-disabled="${user.disabled}">
+                            ${user.disabled ? 'Enable' : 'Disable'}
                         </button>
                     </td>
                 `;
@@ -99,12 +100,12 @@ export async function render(container) {
                     const role = profileSnap.exists() ? profileSnap.data().role : 'user';
 
                     document.getElementById('user-details-body').innerHTML = `
-                        <p><strong>UID:</strong> \${user.uid}</p>
-                        <p><strong>Name:</strong> \${user.displayName || 'N/A'}</p>
-                        <p><strong>Email:</strong> \${user.email} (\${user.emailVerified ? 'Verified' : 'Unverified'})</p>
-                        <p><strong>Role:</strong> \${role}</p>
-                        <p><strong>Status:</strong> \${user.disabled ? 'Disabled' : 'Enabled'}</p>
-                        <p><strong>Created:</strong> \${new Date(user.metadata.creationTime).toLocaleString()}</p>
+                        <p><strong>UID:</strong> ${user.uid}</p>
+                        <p><strong>Name:</strong> ${user.displayName || 'N/A'}</p>
+                        <p><strong>Email:</strong> ${user.email} (${user.emailVerified ? 'Verified' : 'Unverified'})</p>
+                        <p><strong>Role:</strong> ${role}</p>
+                        <p><strong>Status:</strong> ${user.disabled ? 'Disabled' : 'Enabled'}</p>
+                        <p><strong>Created:</strong> ${new Date(user.metadata.creationTime).toLocaleString()}</p>
                     `;
                     document.getElementById('user-modal').style.display = 'block';
                 });

@@ -1,6 +1,5 @@
-import { db, storage } from '../admin-firebase.js';
+import { db, auth, deleteB2Object } from '../admin-firebase.js';
 import { collection, query, where, orderBy, limit, getDocs, doc, deleteDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js';
 
 export async function render(container) {
     container.innerHTML = `
@@ -77,7 +76,7 @@ window.previewVideo = (url) => {
 window.deleteVideo = async (docId, fullPath) => {
     if(!confirm('Delete this video?')) return;
     try {
-        if(fullPath) await deleteObject(ref(storage, fullPath));
+        if(fullPath) await deleteB2Object(fullPath);
         await deleteDoc(doc(db, 'files', docId));
         loadVideos();
     } catch(e) {
@@ -87,27 +86,34 @@ window.deleteVideo = async (docId, fullPath) => {
 
 async function handleVideoUpload(e) {
     const files = e.target.files;
+    const { SystemUploader } = await import('../components/uploader.js');
+    
     for (let file of files) {
-        if(file.size > 100 * 1024 * 1024) {
-            if(!confirm(`File ${file.name} is over 100MB. Continue?`)) continue;
-        }
-        const storageRef = ref(storage, 'admin/videos/' + Date.now() + '_' + file.name);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-        
-        await new Promise((resolve, reject) => {
-            uploadTask.on('state_changed', null, reject, async () => {
-                const url = await getDownloadURL(uploadTask.snapshot.ref);
-                await addDoc(collection(db, 'files'), {
-                    name: file.name,
-                    size: file.size,
-                    contentType: file.type,
-                    url: url,
-                    fullPath: uploadTask.snapshot.ref.fullPath,
-                    uploadedAt: serverTimestamp()
-                });
-                resolve();
+        try {
+            await SystemUploader.upload(file, 'videos', { 
+                maxSizeMB: 500,
+                onSaveMetadata: async (result) => {
+                    await addDoc(collection(db, 'files'), {
+                        name: result.name,
+                        size: result.size,
+                        contentType: result.contentType,
+                        url: result.url,
+                        fullPath: result.fullPath,
+                        storageProvider: 'b2',
+                        visibility: 'public',
+                        uploadedAt: serverTimestamp()
+                    });
+                    
+                    await addDoc(collection(db, 'activityLog'), {
+                        actionText: `Uploaded video ${result.name}`,
+                        actionIcon: '🎥',
+                        timestamp: serverTimestamp()
+                    });
+                }
             });
-        });
+        } catch (error) {
+            console.error('Upload failed for', file.name, error);
+        }
     }
     document.getElementById('video-upload').value = '';
     loadVideos();

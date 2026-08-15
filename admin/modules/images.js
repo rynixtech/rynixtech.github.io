@@ -1,6 +1,5 @@
-import { db, storage } from '../admin-firebase.js';
+import { db, auth, deleteB2Object } from '../admin-firebase.js';
 import { collection, query, where, orderBy, limit, getDocs, doc, deleteDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js';
 
 export async function render(container) {
     container.innerHTML = `
@@ -72,7 +71,7 @@ window.previewImage = (url) => {
 window.deleteImage = async (docId, fullPath) => {
     if(!confirm('Delete this image?')) return;
     try {
-        if(fullPath) await deleteObject(ref(storage, fullPath));
+        if(fullPath) await deleteB2Object(fullPath);
         await deleteDoc(doc(db, 'files', docId));
         loadImages();
     } catch(e) {
@@ -82,25 +81,34 @@ window.deleteImage = async (docId, fullPath) => {
 
 async function handleImageUpload(e) {
     const files = e.target.files;
+    const { SystemUploader } = await import('../components/uploader.js');
+    
     for (let file of files) {
-        // Basic compression logic placeholder (can implement canvas here)
-        const storageRef = ref(storage, 'admin/images/' + Date.now() + '_' + file.name);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-        
-        await new Promise((resolve, reject) => {
-            uploadTask.on('state_changed', null, reject, async () => {
-                const url = await getDownloadURL(uploadTask.snapshot.ref);
-                await addDoc(collection(db, 'files'), {
-                    name: file.name,
-                    size: file.size,
-                    contentType: file.type,
-                    url: url,
-                    fullPath: uploadTask.snapshot.ref.fullPath,
-                    uploadedAt: serverTimestamp()
-                });
-                resolve();
+        try {
+            await SystemUploader.upload(file, 'images', { 
+                maxSizeMB: 50,
+                onSaveMetadata: async (result) => {
+                    await addDoc(collection(db, 'files'), {
+                        name: result.name,
+                        size: result.size,
+                        contentType: result.contentType,
+                        url: result.url,
+                        fullPath: result.fullPath,
+                        storageProvider: 'b2',
+                        visibility: 'public',
+                        uploadedAt: serverTimestamp()
+                    });
+                    
+                    await addDoc(collection(db, 'activityLog'), {
+                        actionText: `Uploaded image ${result.name}`,
+                        actionIcon: '🖼️',
+                        timestamp: serverTimestamp()
+                    });
+                }
             });
-        });
+        } catch (error) {
+            console.error('Upload failed for', file.name, error);
+        }
     }
     document.getElementById('image-upload').value = '';
     loadImages();

@@ -4,51 +4,292 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050711">
-  <title>Dashboard — Rynix Tech</title>
+  <title>My Account — Rynix Tech</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
-</head>
-<body class="auth-page">
-  <main class="dashboard-card">
-    <a class="auth-brand" href="index.html">RYNIX TECH</a>
-    <h1>You’re connected.</h1>
-    <p>Your Rynix Tech session is active and authenticated via Firebase.</p>
+  <style>
+    .customer-dashboard {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      gap: 40px;
+    }
+    .customer-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .customer-sidebar a {
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.2s, color 0.2s;
+    }
+    .customer-sidebar a:hover, .customer-sidebar a.active {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--gold-soft);
+    }
+    .customer-content {
+      background: rgba(11, 16, 35, 0.82);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 40px;
+      min-height: 500px;
+      backdrop-filter: blur(18px);
+    }
+    .customer-content h2 {
+      margin-top: 0;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2rem;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--gold-soft), var(--gold));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #171104;
+    }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .card-item {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .card-item h4 { margin: 0 0 10px 0; color: var(--gold-soft); }
+    .card-item p { margin: 0; color: var(--muted); font-size: 0.9rem; }
     
-    <div id="profileDetails">
-      <p id="userEmail" class="user-email">Loading account…</p>
-      <p id="userRole" class="auth-links" style="margin-top:5px !important; margin-bottom: 20px !important;"></p>
-    </div>
+    @media (max-width: 800px) {
+      .customer-dashboard { grid-template-columns: 1fr; }
+      .customer-sidebar { flex-direction: row; flex-wrap: wrap; }
+      .customer-sidebar a { flex: 1; text-align: center; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="site-shell">
+  <div id="galaxy" aria-hidden="true"></div>
+  <canvas id="stars" aria-hidden="true"></canvas>
 
-    <button class="button button-primary" type="button" onclick="logout()">Log out</button>
+  <header class="site-header" style="justify-content: flex-start; gap: 15px;">
+    <a class="brand" href="index.html">
+      RYNIX TECH
+    </a>
+    <nav class="site-nav" aria-label="Primary navigation" style="margin-left: auto;">
+      <a href="shopping.html">Shopping</a>
+      <a href="books.html">Book Store</a>
+      <a href="apps.html">App Store</a>
+    </nav>
+    <div class="header-actions" id="headerAuthActions" style="margin-left: auto;">
+      <!-- Populated via JS -->
+    </div>
+  </header>
+
+  <main class="customer-dashboard">
+    <nav class="customer-sidebar" id="sidebarNav">
+      <a href="#profile" class="active">My Profile</a>
+      <a href="#orders">Orders</a>
+      <a href="#addresses">Address Book</a>
+      <a href="#wishlist">Wishlist</a>
+      <a href="#downloads">Downloads</a>
+      <a href="#settings">Settings</a>
+    </nav>
+
+    <div class="customer-content" id="mainContent">
+      <!-- Dynamic Content Loads Here -->
+      <h2>Loading...</h2>
+    </div>
   </main>
 
   <script type="module">
     import { auth } from './firebase.js';
-    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+    import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
     import { getUserProfile, ensureUserProfile } from './auth.js';
 
-    const userEmailEl = document.getElementById('userEmail');
-    const userRoleEl = document.getElementById('userRole');
+    const contentDiv = document.getElementById('mainContent');
+    const headerActions = document.getElementById('headerAuthActions');
+    let currentUserData = null;
+    let currentProfile = null;
+    let isAdmin = false;
+
+    window.logout = async () => {
+      await signOut(auth);
+      window.location.href = 'index.html';
+    };
 
     onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          await user.reload();
-        } catch (e) {}
-        const currentUser = auth.currentUser;
-        if (!currentUser || !currentUser.emailVerified) {
-          window.location.replace('login.html');
-          return;
-        }
-        const profile = await getUserProfile(currentUser.uid) || await ensureUserProfile(currentUser);
-        userEmailEl.textContent = currentUser.email || 'Authenticated User';
-        userRoleEl.textContent = `Role: ${profile?.role || 'user'} • UID: ${currentUser.uid.slice(0, 8)}…`;
-      } else {
+      if (!user) {
         window.location.replace('login.html');
+        return;
       }
+      if (!user.emailVerified) {
+        window.location.replace('login.html');
+        return;
+      }
+      
+      currentUserData = user;
+      currentProfile = await getUserProfile(user.uid) || await ensureUserProfile(user);
+      
+      try {
+        const idTokenResult = await user.getIdTokenResult(true);
+        isAdmin = idTokenResult.claims.admin === true;
+      } catch (e) {}
+
+      // Update Header
+      const displayName = currentProfile?.displayName || user.displayName || (user.email ? user.email.split('@')[0] : 'User');
+      headerActions.innerHTML = \`
+        <span class="button button-quiet" style="gap: 6px; cursor: default;">
+          👤 \${displayName}
+        </span>
+        \${isAdmin ? '<a href="admin/index.html" class="button button-primary" style="background:#4ade80; color:#0a0e1a;">Admin Control Center</a>' : ''}
+        <button onclick="logout()" class="button button-quiet">Log out</button>
+      \`;
+
+      handleRoute();
     });
+
+    function renderProfile() {
+      const email = currentUserData.email;
+      const initial = email.charAt(0).toUpperCase();
+      const creationDate = new Date(parseInt(currentUserData.metadata.createdAt)).toLocaleDateString();
+      
+      contentDiv.innerHTML = \`
+        <h2>Personal Details</h2>
+        <div class="profile-header">
+          <div class="profile-avatar">\${initial}</div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.5rem;">\${email.split('@')[0]}</h3>
+            <p style="margin: 5px 0 0; color: var(--muted);">\${email}</p>
+            <span style="display:inline-block; margin-top:8px; padding: 4px 10px; background: rgba(74, 222, 128, 0.1); color: #4ade80; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">Account Active</span>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="card-item">
+            <h4>Account ID</h4>
+            <p>\${currentUserData.uid}</p>
+          </div>
+          <div class="card-item">
+            <h4>Member Since</h4>
+            <p>\${creationDate}</p>
+          </div>
+          <div class="card-item">
+            <h4>Role</h4>
+            <p>\${isAdmin ? 'Administrator' : 'Customer'}</p>
+          </div>
+        </div>
+        <div style="margin-top: 30px;">
+            <button class="button button-primary">Edit Profile</button>
+        </div>
+      \`;
+    }
+
+    function renderOrders() {
+      contentDiv.innerHTML = \`
+        <h2>Order History</h2>
+        <div class="card-item" style="text-align: center; padding: 60px 20px;">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--line)" stroke-width="2" style="margin-bottom:15px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+          <h4 style="color: var(--text);">No orders found</h4>
+          <p>You haven't placed any orders yet. Start exploring our store!</p>
+          <a href="shopping.html" class="button button-primary" style="margin-top: 20px;">Browse Store</a>
+        </div>
+      \`;
+    }
+
+    function renderAddresses() {
+      contentDiv.innerHTML = \`
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
+            <h2 style="border:none; margin:0; padding:0;">Address Book</h2>
+            <button class="button button-primary">+ Add Address</button>
+        </div>
+        <div class="card-item" style="text-align: center; padding: 40px 20px;">
+          <p>You have not saved any addresses yet.</p>
+        </div>
+      \`;
+    }
+
+    function renderWishlist() {
+      contentDiv.innerHTML = \`
+        <h2>Wishlist</h2>
+        <div class="card-item" style="text-align: center; padding: 40px 20px;">
+          <p>Your wishlist is empty.</p>
+        </div>
+      \`;
+    }
+
+    function renderDownloads() {
+      contentDiv.innerHTML = \`
+        <h2>Digital Downloads</h2>
+        <div class="card-item" style="text-align: center; padding: 40px 20px;">
+          <p>No digital products or apps available to download.</p>
+        </div>
+      \`;
+    }
+
+    function renderSettings() {
+      contentDiv.innerHTML = \`
+        <h2>Account Settings</h2>
+        <div class="card-item" style="margin-bottom: 20px;">
+          <h4>Email Preferences</h4>
+          <label style="display:flex; align-items:center; gap:10px; margin-top:10px; color:var(--muted); font-size:0.9rem;">
+            <input type="checkbox" checked> Receive order updates
+          </label>
+          <label style="display:flex; align-items:center; gap:10px; margin-top:10px; color:var(--muted); font-size:0.9rem;">
+            <input type="checkbox"> Receive promotional offers
+          </label>
+        </div>
+        <div class="card-item">
+          <h4>Security</h4>
+          <button class="button button-quiet" style="margin-top:10px;">Change Password</button>
+        </div>
+      \`;
+    }
+
+    function handleRoute() {
+      if (!currentUserData) return;
+      const hash = window.location.hash || '#profile';
+      
+      // Update sidebar active state
+      document.querySelectorAll('#sidebarNav a').forEach(a => {
+        if (a.getAttribute('href') === hash) {
+          a.classList.add('active');
+        } else {
+          a.classList.remove('active');
+        }
+      });
+
+      switch(hash) {
+        case '#orders': renderOrders(); break;
+        case '#addresses': renderAddresses(); break;
+        case '#wishlist': renderWishlist(); break;
+        case '#downloads': renderDownloads(); break;
+        case '#settings': renderSettings(); break;
+        case '#profile':
+        default: renderProfile(); break;
+      }
+    }
+
+    window.addEventListener('hashchange', handleRoute);
+
   </script>
 </body>
 </html>

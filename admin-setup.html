@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Bootstrap</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: #0a0e1a; color: white; }
+    .card { background: #1a2235; padding: 30px; border-radius: 8px; max-width: 500px; margin: auto; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+    h2 { margin-top: 0; color: #fff; }
+    button { padding: 12px 20px; cursor: pointer; background: #55dcff; color: #0a0e1a; border: none; border-radius: 4px; font-weight: bold; margin-top: 15px; font-size: 1rem; width: 100%; }
+    button:disabled { background: #555; cursor: not-allowed; color: #888; }
+    .success { color: #4ade80; }
+    .error { color: #f87171; }
+    .info-row { margin: 10px 0; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 4px; }
+    .info-row strong { color: #a1b2d3; display: inline-block; width: 100px; }
+    #auth-msg { margin-top: 15px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Owner Authorization Setup</h2>
+    <div id="status">Checking authentication...</div>
+    
+    <div id="user-info" hidden>
+      <div class="info-row"><strong>Email:</strong> <span id="email"></span></div>
+      <div class="info-row"><strong>UID:</strong> <span id="uid" style="font-family: monospace;"></span></div>
+      <div class="info-row"><strong>Admin Claim:</strong> <span id="admin-claim"></span></div>
+      
+      <div id="auth-section" hidden>
+        <button id="auth-btn">Authorize this account as Rynix Tech Admin</button>
+        <div id="auth-msg"></div>
+      </div>
+      
+      <div id="unauth-section" hidden>
+        <p class="error" style="text-align: center; margin-top: 20px; padding: 15px; background: rgba(248, 113, 113, 0.1); border-radius: 4px;">
+          This account is not an authorized owner.
+        </p>
+      </div>
+
+      <div id="next-step" hidden>
+        <button onclick="window.location.href='/admin/index.html'" style="background: #4ade80; color: #0a0e1a;">Go to Control Center ➔</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    // Reuse existing firebase initialization
+    import { auth } from './firebase.js';
+    import { onAuthStateChanged, getIdTokenResult } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+    import { getFunctions } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js';
+    import { httpsCallable } from './firebase.js';
+
+    // The backend is the source of truth for this list. 
+    // This frontend list is purely for UI convenience to hide the button for non-admins.
+    const AUTHORIZED_UIDS = [
+      "M5UaYY9XROaJoln9c6YxUo6CjM33",
+      "DOvjj0w4XvRvL0s23rESPjrpkv72",
+      "udXZkoXsEmb8ag4KiQ5Kl8d75bl2",
+      "ydgB77Ue40YHLeKxN0PNNver4eA2"
+    ];
+
+    const statusEl = document.getElementById('status');
+    const userInfoEl = document.getElementById('user-info');
+    const emailEl = document.getElementById('email');
+    const uidEl = document.getElementById('uid');
+    const adminClaimEl = document.getElementById('admin-claim');
+    const authSection = document.getElementById('auth-section');
+    const unauthSection = document.getElementById('unauth-section');
+    const authBtn = document.getElementById('auth-btn');
+    const authMsg = document.getElementById('auth-msg');
+    const nextStep = document.getElementById('next-step');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        statusEl.innerHTML = '<span class="error">You are not logged in. Please <a href="/login.html" style="color:#55dcff">log in here</a> first.</span>';
+        return;
+      }
+
+      statusEl.hidden = true;
+      userInfoEl.hidden = false;
+      emailEl.textContent = user.email;
+      uidEl.textContent = user.uid;
+
+      // Force refresh to get the absolute latest claims
+      const tokenResult = await getIdTokenResult(user, true);
+      const isAdmin = tokenResult.claims.admin === true;
+      
+      adminClaimEl.textContent = isAdmin ? 'True (Authorized)' : 'False (Not Authorized)';
+      adminClaimEl.className = isAdmin ? 'success' : 'error';
+
+      if (isAdmin) {
+        authMsg.innerHTML = '<span class="success">You are already an authorized admin!</span>';
+        authSection.hidden = false;
+        authBtn.hidden = true;
+        nextStep.hidden = false;
+        return;
+      }
+
+      if (AUTHORIZED_UIDS.includes(user.uid)) {
+        authSection.hidden = false;
+      } else {
+        unauthSection.hidden = false;
+      }
+    });
+
+    authBtn.addEventListener('click', async () => {
+      authBtn.disabled = true;
+      authMsg.innerHTML = "<em>Connecting to Cloud Functions...</em>";
+      
+      try {
+        const functions = getFunctions(auth.app, 'us-central1');
+        // Securely call the backend Cloud Function
+        const setInitialAdmin = httpsCallable(functions, 'setInitialAdmin');
+        
+        const res = await setInitialAdmin({ uid: auth.currentUser.uid });
+        authMsg.innerHTML = `<span class="success">✔ ${res.data.message}</span><br><em>Refreshing token...</em>`;
+        
+        // Force refresh the token to pull down the newly attached claim
+        const tokenResult = await getIdTokenResult(auth.currentUser, true);
+        const isAdmin = tokenResult.claims.admin === true;
+        
+        if (isAdmin) {
+          adminClaimEl.textContent = 'True (Authorized)';
+          adminClaimEl.className = 'success';
+          authMsg.innerHTML += '<br><span class="success">✔ Token refreshed successfully. Admin claim verified.</span>';
+          nextStep.hidden = false;
+          authBtn.hidden = true;
+        } else {
+          authMsg.innerHTML += '<br><span class="error">Token refreshed but claim was not found. Please check Firebase Functions logs.</span>';
+          authBtn.disabled = false;
+        }
+      } catch (err) {
+        console.error("Cloud Function Error:", err);
+        authMsg.innerHTML = `<span class="error">✖ Error: ${err.message}</span>`;
+        authBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

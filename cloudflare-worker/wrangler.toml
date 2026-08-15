@@ -1,0 +1,14 @@
+name = "rynixtech-control-center-worker"
+main = "src/index.js"
+compatibility_date = "2024-03-04"
+
+# Secrets required (add these via `wrangler secret put <NAME>`):
+# B2_REGION
+# B2_APPLICATION_KEY_ID
+# B2_APPLICATION_KEY
+# FIREBASE_PROJECT_ID
+# FIREBASE_CLIENT_EMAIL
+# FIREBASE_PRIVATE_KEY
+
+[triggers]
+crons = [ "*/15 * * * *" ]

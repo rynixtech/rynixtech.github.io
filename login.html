@@ -75,7 +75,7 @@
         const currentUser = auth.currentUser;
         if (currentUser && currentUser.emailVerified) {
           await ensureUserProfile(currentUser);
-          window.location.replace('index.html');
+          window.location.replace('dashboard.html');
         } else if (currentUser && !currentUser.emailVerified) {
           unverifiedUser = currentUser;
           message.style.color = 'var(--danger)';
@@ -146,7 +146,7 @@
         }
 
         await ensureUserProfile(user);
-        window.location.replace('index.html');
+        window.location.replace('dashboard.html');
       } catch (error) {
         message.style.color = 'var(--danger)';
         let msg = error.message;

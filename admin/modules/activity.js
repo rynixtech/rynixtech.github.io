@@ -46,11 +46,11 @@ export async function render(container) {
             const dateStr = data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : 'Unknown time';
             
             div.innerHTML = `
-                <div style="font-size: 20px; float: left; margin-right: 10px;">\${icon}</div>
+                <div style="font-size: 20px; float: left; margin-right: 10px;">${icon}</div>
                 <div>
-                    <strong>\${data.action} \${data.resource}</strong><br>
-                    <small style="color: #aeb8d2;">\${dateStr}</small>
-                    \${data.details ? \`<br><span style="color: #f4f7ff;">\${data.details}</span>\` : ''}
+                    <strong>${data.action} ${data.resource}</strong><br>
+                    <small style="color: #aeb8d2;">${dateStr}</small>
+                    ${data.details ? \`<br><span style="color: #f4f7ff;">${data.details}</span>\` : ''}
                 </div>
             `;
             timeline.appendChild(div);

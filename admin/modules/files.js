@@ -1,6 +1,5 @@
-import { db, storage } from '../admin-firebase.js';
+import { db, auth, deleteB2Object } from '../admin-firebase.js';
 import { collection, query, where, orderBy, limit, startAfter, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js';
 
 export async function render(container) {
     container.innerHTML = `
@@ -110,35 +109,36 @@ async function loadFiles() {
 async function handleUpload(e) {
     const files = e.target.files;
     const progressDiv = document.getElementById('upload-progress');
+    const { SystemUploader } = await import('../components/uploader.js');
     
     for (let file of files) {
-        progressDiv.innerHTML = `Uploading ${file.name}...`;
-        const storageRef = ref(storage, 'admin/files/' + Date.now() + '_' + file.name);
-        const uploadTask = uploadBytesResumable(storageRef, file);
-        
-        await new Promise((resolve, reject) => {
-            uploadTask.on('state_changed', null, reject, async () => {
-                const url = await getDownloadURL(uploadTask.snapshot.ref);
-                await addDoc(collection(db, 'files'), {
-                    name: file.name,
-                    size: file.size,
-                    contentType: file.type,
-                    url: url,
-                    fullPath: uploadTask.snapshot.ref.fullPath,
-                    uploadedAt: serverTimestamp()
-                });
-                
-                await addDoc(collection(db, 'activityLog'), {
-                    actionText: `Uploaded file ${file.name}`,
-                    actionIcon: '⬆️',
-                    timestamp: serverTimestamp()
-                });
-                
-                resolve();
+        try {
+            await SystemUploader.upload(file, 'documents', { 
+                maxSizeMB: 500,
+                onSaveMetadata: async (result) => {
+                    await addDoc(collection(db, 'files'), {
+                        name: result.name,
+                        size: result.size,
+                        contentType: result.contentType,
+                        url: result.url,
+                        fullPath: result.fullPath,
+                        storageProvider: 'b2',
+                        visibility: 'private',
+                        uploadedAt: serverTimestamp()
+                    });
+                    
+                    await addDoc(collection(db, 'activityLog'), {
+                        actionText: `Uploaded file ${result.name}`,
+                        actionIcon: '📄',
+                        timestamp: serverTimestamp()
+                    });
+                }
             });
-        });
+        } catch (error) {
+            console.error('Upload failed for', file.name, error);
+        }
     }
-    progressDiv.innerHTML = `Upload complete!`;
+    progressDiv.innerHTML = `All queued uploads processed.`;
     document.getElementById('file-input').value = '';
     loadFiles();
 }
@@ -147,8 +147,7 @@ window.deleteFile = async (docId, fullPath) => {
     if(!confirm('Delete this file?')) return;
     try {
         if(fullPath) {
-            const storageRef = ref(storage, fullPath);
-            await deleteObject(storageRef);
+            await deleteB2Object(fullPath);
         }
         await deleteDoc(doc(db, 'files', docId));
         loadFiles();

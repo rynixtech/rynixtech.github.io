@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050711">
+  <title>Shopping — Rynix Tech</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .store-container { max-width: 1160px; margin: 40px auto; padding: 0 20px; }
+    
+    .search-section { text-align: center; margin-bottom: 60px; }
+    .search-section h1 { font-size: 3rem; margin-bottom: 15px; font-family: 'Space Grotesk', sans-serif; }
+    .search-section p { color: var(--muted); font-size: 1.1rem; margin-bottom: 35px; }
+    .search-bar { position: relative; max-width: 600px; margin: 0 auto; }
+    .search-bar input { width: 100%; padding: 18px 25px; border-radius: 99px; background: rgba(11, 16, 35, 0.82); border: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 1.1rem; backdrop-filter: blur(18px); transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+    .search-bar input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(246,198,87,0.1); }
+
+    .content-section { margin-bottom: 70px; }
+    .section-header { margin-bottom: 25px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+    .section-header h2 { font-size: 1.6rem; margin: 0; font-family: 'Space Grotesk', sans-serif; }
+
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
+    .product-card { background: rgba(11, 16, 35, 0.82); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; transition: transform 0.2s, border-color 0.2s; backdrop-filter: blur(18px); }
+    .product-card:hover { transform: translateY(-5px); border-color: rgba(246,198,87,0.5); }
+    .product-image { height: 200px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: var(--muted); }
+    .product-details { padding: 20px; }
+    .product-details h3 { margin: 0 0 10px 0; font-size: 1.2rem; }
+    .product-details .price { color: var(--gold-soft); font-weight: 700; font-size: 1.1rem; margin-bottom: 15px; }
+    .product-details .button { width: 100%; min-height: 40px; }
+  </style>
+</head>
+<body class="site-shell">
+  <div id="galaxy" aria-hidden="true"></div>
+  <canvas id="stars" aria-hidden="true"></canvas>
+
+  <header class="site-header">
+    <a class="brand" href="index.html">RYNIX TECH</a>
+    <div class="header-actions">
+      <a class="button button-quiet" href="dashboard.html">My Account</a>
+    </div>
+  </header>
+
+  <main class="store-container">
+    <div class="search-section">
+      <h1>Shopping</h1>
+      <p>Discover our latest physical and digital products.</p>
+      <div class="search-bar">
+        <input type="text" placeholder="Search products, merchandise, or hardware..." aria-label="Search Products">
+      </div>
+    </div>
+    
+    <section class="content-section">
+      <div class="section-header">
+        <h2>Featured Products</h2>
+      </div>
+      <div class="product-grid">
+        <!-- Mock Product 1 -->
+        <article class="product-card">
+          <div class="product-image">Product Image</div>
+          <div class="product-details">
+            <h3>Rynix Tech Hoodie</h3>
+            <div class="price">$55.00</div>
+            <button class="button button-quiet">Coming Soon</button>
+          </div>
+        </article>
+        <!-- Mock Product 2 -->
+        <article class="product-card">
+          <div class="product-image">Product Image</div>
+          <div class="product-details">
+            <h3>Rynix Desk Mat</h3>
+            <div class="price">$35.00</div>
+            <button class="button button-quiet">Coming Soon</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

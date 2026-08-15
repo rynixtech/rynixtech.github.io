@@ -42,7 +42,7 @@ export async function render(container) {
             
             e.target.classList.add('active');
             const tabId = e.target.getAttribute('data-tab');
-            document.getElementById(\`tab-\${tabId}\`).style.display = 'block';
+            document.getElementById(\`tab-${tabId}\`).style.display = 'block';
         });
     });
 
