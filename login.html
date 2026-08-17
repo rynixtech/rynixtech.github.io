@@ -34,7 +34,7 @@
       </button>
 
       <div class="divider">or</div>
-      <button id="googleBtn" class="button button-google" type="button" onclick="googleLogin()">Continue with Google</button>
+      <button id="googleBtn" class="button button-google" type="button">Continue with Google</button>
     </form>
 
     <div class="message" id="message" role="status" aria-live="polite"></div>
@@ -52,15 +52,18 @@
   <script type="module">
     import { auth } from './firebase.js';
     import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
-    import { ensureUserProfile } from './auth.js';
+    import { ensureUserProfile, googleLogin, redirectBasedOnRole } from './auth.js';
 
     const loginForm = document.getElementById('loginForm');
     const email = document.getElementById('email');
     const password = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
+    const googleBtn = document.getElementById('googleBtn');
     const message = document.getElementById('message');
     const resendContainer = document.getElementById('resendContainer');
     const resendBtn = document.getElementById('resendBtn');
+
+    googleBtn.addEventListener('click', googleLogin);
 
     let unverifiedUser = null;
 
@@ -75,7 +78,7 @@
         const currentUser = auth.currentUser;
         if (currentUser && currentUser.emailVerified) {
           await ensureUserProfile(currentUser);
-          window.location.replace('dashboard.html');
+          await redirectBasedOnRole(currentUser);
         } else if (currentUser && !currentUser.emailVerified) {
           unverifiedUser = currentUser;
           message.style.color = 'var(--danger)';
@@ -146,7 +149,7 @@
         }
 
         await ensureUserProfile(user);
-        window.location.replace('dashboard.html');
+        await redirectBasedOnRole(user);
       } catch (error) {
         message.style.color = 'var(--danger)';
         let msg = error.message;

@@ -23,40 +23,30 @@ export async function render(container) {
             term.innerHTML = '<div>[SCAN] Initiating multi-system diagnostic...</div>';
             
             const log = (msg, color = '#aeb8d2') => {
-                term.innerHTML += \`<div style="margin-top: 8px; color: \${color};">\${msg}</div>\`;
+                term.innerHTML += `<div style="margin-top: 8px; color: ${color};">${msg}</div>`;
                 term.scrollTop = term.scrollHeight;
             };
 
-            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            try {
+                const { httpsCallable } = await import('../admin-firebase.js');
+                const checkHealth = httpsCallable(null, 'healthCheck');
+                const res = await checkHealth();
+                const data = res.data || res;
+                
+                log(`[FIRESTORE] ${data.services?.firestore === 'Healthy' ? '✔ OK' : '✖ FAILED'}`, data.services?.firestore === 'Healthy' ? '#4ade80' : '#ff758f');
+                log(`[WORKER] ${data.services?.worker === 'Healthy' ? '✔ OK' : '✖ FAILED'}`, data.services?.worker === 'Healthy' ? '#4ade80' : '#ff758f');
+                log(`[STORAGE] ${data.services?.b2 === 'Healthy' ? '✔ OK' : '✖ FAILED'}`, data.services?.b2 === 'Healthy' ? '#4ade80' : '#ff758f');
 
-            await sleep(600);
-            log('[AUTH] Checking Firebase Authentication Provider...', '#f4f7ff');
-            await sleep(400);
-            log('[AUTH] ✔ OK - Firebase Auth responsive.', '#4ade80');
-            
-            await sleep(600);
-            log('[FIRESTORE] Verifying Firestore Admin connectivity...', '#f4f7ff');
-            await sleep(400);
-            log('[FIRESTORE] ✔ OK - Read/Write permissions verified.', '#4ade80');
-            
-            await sleep(800);
-            log('[WORKER] Pinging Cloudflare Worker API...', '#f4f7ff');
-            await sleep(500);
-            log('[WORKER] ✔ OK - Worker responded in 42ms.', '#4ade80');
-            
-            await sleep(700);
-            log('[STORAGE] Testing Backblaze B2 Upload/Delete bindings...', '#f4f7ff');
-            await sleep(800);
-            log('[STORAGE] ✔ OK - B2 integration operational.', '#4ade80');
-
-            await sleep(600);
-            log('[ASSETS] Checking static asset integrity...', '#f4f7ff');
-            await sleep(300);
-            log('[ASSETS] ✔ OK - No missing modules detected.', '#4ade80');
-
-            await sleep(500);
-            log('[SYSTEM] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '#6b7280');
-            log('[SYSTEM] ALL DIAGNOSTIC CHECKS PASSED.', '#4ade80');
+                if(data.status === 'Healthy') {
+                    log('[SYSTEM] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '#6b7280');
+                    log('[SYSTEM] ALL DIAGNOSTIC CHECKS PASSED.', '#4ade80');
+                } else {
+                    log('[SYSTEM] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━', '#6b7280');
+                    log('[SYSTEM] SOME DIAGNOSTIC CHECKS FAILED.', '#ff758f');
+                }
+            } catch(e) {
+                log(`[SYSTEM] DIAGNOSTIC ERROR: ${e.message}`, '#ff758f');
+            }
 
             btn.disabled = false;
             btn.innerText = "Run Full Diagnostic Scan";

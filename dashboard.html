@@ -99,6 +99,7 @@
       <a href="shopping.html">Shopping</a>
       <a href="books.html">Book Store</a>
       <a href="apps.html">App Store</a>
+      <a href="os-store.html">OS Store</a>
     </nav>
     <div class="header-actions" id="headerAuthActions" style="margin-left: auto;">
       <!-- Populated via JS -->
@@ -132,7 +133,27 @@
     let currentProfile = null;
     let isAdmin = false;
 
+    window.switchMode = async (mode) => {
+      if (mode === 'admin') {
+        try {
+          const idTokenResult = await auth.currentUser.getIdTokenResult(true);
+          if (idTokenResult.claims.admin === true) {
+            sessionStorage.setItem('rynix_admin_mode', 'admin');
+            window.location.href = 'admin/index.html';
+          } else {
+            alert('Unauthorized');
+          }
+        } catch (e) {
+          alert('Failed to verify authorization.');
+        }
+      } else {
+        sessionStorage.setItem('rynix_admin_mode', 'customer');
+        window.location.href = 'dashboard.html';
+      }
+    };
+
     window.logout = async () => {
+      sessionStorage.removeItem('rynix_admin_mode');
       await signOut(auth);
       window.location.href = 'index.html';
     };
@@ -161,7 +182,7 @@
         <span class="button button-quiet" style="gap: 6px; cursor: default;">
           👤 \${displayName}
         </span>
-        \${isAdmin ? '<a href="admin/index.html" class="button button-primary" style="background:#4ade80; color:#0a0e1a;">Admin Control Center</a>' : ''}
+        \${isAdmin ? '<button onclick="switchMode(\\'admin\\')" class="button button-primary" style="background:#4ade80; color:#0a0e1a; cursor: pointer;">Admin Control Center</button>' : ''}
         <button onclick="logout()" class="button button-quiet">Log out</button>
       \`;
 
@@ -200,23 +221,49 @@
         <div style="margin-top: 30px;">
             <button class="button button-primary">Edit Profile</button>
         </div>
-      \`;
+      `;
     }
 
-    function renderOrders() {
-      contentDiv.innerHTML = \`
-        <h2>Order History</h2>
-        <div class="card-item" style="text-align: center; padding: 60px 20px;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--line)" stroke-width="2" style="margin-bottom:15px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-          <h4 style="color: var(--text);">No orders found</h4>
-          <p>You haven't placed any orders yet. Start exploring our store!</p>
-          <a href="shopping.html" class="button button-primary" style="margin-top: 20px;">Browse Store</a>
-        </div>
-      \`;
+    async function renderOrders() {
+      contentDiv.innerHTML = '<h2>Order History</h2><p>Loading orders...</p>';
+      try {
+        const { db } = await import('./firebase.js');
+        const { collection, query, where, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+        const q = query(collection(db, 'orders'), where('userId', '==', currentUserData.uid));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+          contentDiv.innerHTML = `
+            <h2>Order History</h2>
+            <div class="card-item" style="text-align: center; padding: 60px 20px;">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--line)" stroke-width="2" style="margin-bottom:15px;"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+              <h4 style="color: var(--text);">No orders found</h4>
+              <p>You haven't placed any orders yet. Start exploring our store!</p>
+              <a href="shopping.html" class="button button-primary" style="margin-top: 20px;">Browse Store</a>
+            </div>
+          `;
+          return;
+        }
+        
+        let html = '<h2>Order History</h2><div style="display:flex; flex-direction:column; gap: 15px;">';
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          html += `
+            <div class="card-item">
+              <h4>Order #${doc.id}</h4>
+              <p>Total: $${data.total || '0.00'} | Status: ${data.status || 'Pending'}</p>
+            </div>
+          `;
+        });
+        html += '</div>';
+        contentDiv.innerHTML = html;
+      } catch (err) {
+        contentDiv.innerHTML = '<h2>Order History</h2><p style="color:#ff758f;">Error loading orders.</p>';
+      }
     }
 
     function renderAddresses() {
-      contentDiv.innerHTML = \`
+      contentDiv.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
             <h2 style="border:none; margin:0; padding:0;">Address Book</h2>
             <button class="button button-primary">+ Add Address</button>

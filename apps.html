@@ -55,27 +55,57 @@
       <div class="section-header">
         <h2>Featured Apps</h2>
       </div>
-      <div class="product-grid">
-        <article class="app-card">
-          <div class="app-icon">Icon</div>
-          <div class="app-details">
-            <h3>Rynix Secure Vault</h3>
-            <div class="desc">Enterprise-grade secure local storage app.</div>
-            <div class="meta"><span>v1.2.0</span><span>15 MB</span></div>
-            <button class="button button-quiet" style="width:100%; min-height: 35px; font-size: 0.8rem;">Download</button>
-          </div>
-        </article>
-        <article class="app-card">
-          <div class="app-icon">Icon</div>
-          <div class="app-details">
-            <h3>Orbit Analytics</h3>
-            <div class="desc">Real-time edge performance monitoring.</div>
-            <div class="meta"><span>v2.0.1</span><span>22 MB</span></div>
-            <button class="button button-quiet" style="width:100%; min-height: 35px; font-size: 0.8rem;">Download</button>
-          </div>
-        </article>
+      <div class="product-grid" id="appsGrid">
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px;">Loading apps...</div>
       </div>
     </section>
   </main>
+  
+  <script type="module">
+    import { db } from './firebase.js';
+    import { collection, query, getDocs, where } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+
+    async function loadApps() {
+      const grid = document.getElementById('appsGrid');
+      try {
+        const q = query(collection(db, 'apps'), where('active', '==', true));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+          grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px;">No applications available at this time.</div>';
+          return;
+        }
+
+        grid.innerHTML = snapshot.docs.map(doc => {
+          const data = doc.data();
+          const version = data.version || 'v1.0.0';
+          const size = data.size ? (data.size / 1024 / 1024).toFixed(1) + ' MB' : 'Unknown Size';
+          
+          return `
+            <article class="app-card">
+              <div class="app-icon">📱</div>
+              <div class="app-details">
+                <h3>${data.name || 'Unnamed App'}</h3>
+                <div class="desc">${data.description || 'No description provided.'}</div>
+                <div class="meta">
+                  <span>${version}</span>
+                  <span>${size}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 10px;">
+                   Release Notes: ${data.releaseNotes || 'No release notes.'}<br>
+                   Screenshots: ${data.screenshots ? 'Available' : 'None'}
+                </div>
+                <button class="button button-quiet" style="width:100%; min-height: 35px; font-size: 0.8rem;" onclick="window.open('${data.downloadUrl || '#'}', '_blank')">Download</button>
+              </div>
+            </article>
+          `;
+        }).join('');
+      } catch (err) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ff758f; padding: 40px;">Failed to load applications.</div>';
+      }
+    }
+
+    loadApps();
+  </script>
 </body>
 </html>

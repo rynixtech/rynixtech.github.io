@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#050711">
+  <meta name="description" content="Select your session mode.">
+  <title>Select Mode — Rynix Tech</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .mode-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .button-mode {
+      padding: 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    .button-mode-admin {
+      background-color: var(--primary);
+      color: #fff;
+    }
+    .button-mode-admin:hover {
+      background-color: var(--primary-hover);
+    }
+    .button-mode-customer {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    .button-mode-customer:hover {
+      background-color: var(--border);
+    }
+  </style>
+</head>
+<body class="auth-page">
+  <main class="auth-card" style="text-align: center;">
+    <a class="auth-brand" href="index.html">RYNIX TECH</a>
+    <h1>Continue as</h1>
+    <p>Select your session mode for this session.</p>
+
+    <div class="mode-buttons">
+      <button id="btnAdmin" class="button button-mode button-mode-admin" type="button">
+        🔐 ADMIN<br><small style="font-size: 0.75rem; font-weight: 400; display: block; margin-top: 4px;">Control Center & Management</small>
+      </button>
+
+      <button id="btnCustomer" class="button button-mode button-mode-customer" type="button">
+        👤 CUSTOMER<br><small style="font-size: 0.75rem; font-weight: 400; display: block; margin-top: 4px;">Normal Rynix Tech Experience</small>
+      </button>
+    </div>
+
+    <div class="message" id="message" role="status" aria-live="polite" style="margin-top: 16px;"></div>
+  </main>
+
+  <script type="module">
+    import { auth } from './firebase.js';
+    import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+
+    const message = document.getElementById('message');
+    const btnAdmin = document.getElementById('btnAdmin');
+    const btnCustomer = document.getElementById('btnCustomer');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        window.location.replace('login.html');
+        return;
+      }
+      
+      try {
+        const idTokenResult = await user.getIdTokenResult();
+        if (idTokenResult.claims.admin !== true) {
+          // Normal users shouldn't be here
+          window.location.replace('dashboard.html');
+        }
+      } catch (err) {
+        console.error(err);
+        message.style.color = 'var(--danger)';
+        message.textContent = 'Failed to verify authorization.';
+      }
+    });
+
+    btnAdmin.addEventListener('click', () => {
+      sessionStorage.setItem('rynix_admin_mode', 'admin');
+      window.location.replace('admin/index.html');
+    });
+
+    btnCustomer.addEventListener('click', () => {
+      sessionStorage.setItem('rynix_admin_mode', 'customer');
+      window.location.replace('dashboard.html');
+    });
+  </script>
+</body>
+</html>

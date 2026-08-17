@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutBucketCorsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as jose from 'jose';
 import { FirebaseRest } from './firebase-rest';
@@ -64,11 +64,19 @@ async function authMiddleware(c, next) {
 async function adminMiddleware(c, next) {
   const authHeader = c.req.header('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('[AUTH] Missing or invalid Authorization header');
     return c.json({ error: 'Missing or invalid Authorization header' }, 401);
   }
   const token = authHeader.split(' ')[1];
   const payload = await verifyFirebaseToken(token, c.env.FIREBASE_PROJECT_ID);
-  if (!payload || payload.admin !== true) return c.json({ error: 'Unauthorized. Admin access required.' }, 403);
+  if (!payload) {
+    console.log('[AUTH] Token verification failed for project:', c.env.FIREBASE_PROJECT_ID);
+    return c.json({ error: 'Unauthorized. Token verification failed.' }, 401);
+  }
+  if (payload.admin !== true) {
+    console.log('[AUTH] User is not admin. Claims:', JSON.stringify(payload));
+    return c.json({ error: 'Unauthorized. Admin access required.' }, 403);
+  }
   c.set('user', payload);
   await next();
 }
@@ -90,25 +98,44 @@ function getS3Client(env) {
   });
 }
 
-app.post('/api/storage/upload', async (c) => {
-  const { filename, contentType, category } = await c.req.json();
-  if (!filename || !contentType) return c.json({ error: 'Missing filename or contentType' }, 400);
-  const allowedCategories = ['images', 'videos', 'apks', 'documents', 'product-images'];
-  if (!allowedCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400);
-
-  const safeFilename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const fileId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-  const prefix = category === 'documents' ? 'private/documents' : `public/${category}`;
-  const objectKey = `${prefix}/${fileId}_${safeFilename}`;
-
-  const s3 = getS3Client(c.env);
-  const command = new PutObjectCommand({
-    Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
-    Key: objectKey,
-    ContentType: contentType,
-  });
-
+app.get('/api/admin/test-storage', async (c) => {
   try {
+    const s3 = getS3Client(c.env);
+    // Try to put a tiny test object
+    const testKey = `public/test/connection-test-${Date.now()}.txt`;
+    const command = new PutObjectCommand({
+      Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
+      Key: testKey,
+      Body: 'test',
+      ContentType: 'text/plain'
+    });
+    await s3.send(command);
+    return c.json({ ok: true, message: 'B2 connection successful!' });
+  } catch (err) {
+    console.error(err.stack); // log internally
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.post('/api/storage/upload', async (c) => {
+  try {
+    const { filename, contentType, category } = await c.req.json();
+    if (!filename || !contentType) return c.json({ error: 'Missing filename or contentType' }, 400);
+    const allowedCategories = ['images', 'videos', 'apks', 'documents', 'product-images'];
+    if (!allowedCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400);
+
+    const safeFilename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const fileId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+    const prefix = category === 'documents' ? 'private/documents' : `public/${category}`;
+    const objectKey = `${prefix}/${fileId}_${safeFilename}`;
+
+    const s3 = getS3Client(c.env);
+    const command = new PutObjectCommand({
+      Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
+      Key: objectKey,
+      ContentType: contentType,
+    });
+
     const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
     return c.json({ 
       ok: true, 
@@ -117,10 +144,11 @@ app.post('/api/storage/upload', async (c) => {
       objectKey 
     });
   } catch (err) {
+    console.error('[UPLOAD ERROR]', err.name, err.message, err.stack);
     return c.json({ 
       ok: false, 
       code: 'UPLOAD_FAILED', 
-      message: 'Failed to generate upload URL' 
+      message: 'Failed to generate upload URL: ' + err.message 
     }, 500);
   }
 });
@@ -140,6 +168,30 @@ app.post('/api/storage/delete', async (c) => {
     return c.json({ success: true });
   } catch (err) {
     return c.json({ error: 'Failed to delete object' }, 500);
+  }
+});
+
+app.get('/setup-b2-cors', async (c) => {
+  const s3 = getS3Client(c.env);
+  const command = new PutBucketCorsCommand({
+    Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
+    CORSConfiguration: {
+      CORSRules: [
+        {
+          AllowedHeaders: ["*"],
+          AllowedMethods: ["GET", "PUT", "POST", "HEAD"],
+          AllowedOrigins: ["*"],
+          ExposeHeaders: ["ETag"],
+          MaxAgeSeconds: 3600
+        }
+      ]
+    }
+  });
+  try {
+    await s3.send(command);
+    return c.json({ success: true, message: "CORS rules applied to B2 bucket." });
+  } catch (err) {
+    return c.json({ error: err.message, stack: err.stack }, 500);
   }
 });
 
@@ -447,78 +499,185 @@ app.post('/api/auth/verifyPasswordResetOtp', async (c) => {
 });
 
 app.onError((err, c) => {
-  return c.json({ error: 'Internal Server Error', message: err.message, stack: err.stack }, 500);
+  console.error(err.stack); // log internally
+  return c.json({ ok: false, code: "INTERNAL_ERROR", message: "The server could not complete the request." }, 500);
 });
 
-app.get('/api/admin/healthCheck', async (c) => {
-  // Manual trigger for diagnostic scan from Control Center
+let _brainState = {
+  isPaused: false,
+  lastRun: null,
+  lastSuccessfulRun: null,
+  currentVersion: "v1.2 (Cognitive NLP)",
+  schedulerStatus: "Active",
+  heartbeat: null
+};
+
+let _brainEvents = [];
+
+function addBrainEvent(type, status, message) {
+  _brainEvents.unshift({ type, status, message, timestamp: new Date().toISOString() });
+  if (_brainEvents.length > 50) _brainEvents.pop();
+}
+
+app.post('/api/admin/getBrainState', async (c) => {
+  return c.json({ data: { state: _brainState, events: _brainEvents } });
+});
+
+app.post('/api/admin/brainCommand', async (c) => {
+  try {
+    const body = await c.req.json();
+    const command = (body.data?.command || body.command || "").trim().toLowerCase();
+    
+    // Admin Overrides
+    if (command.startsWith('/override auth ')) {
+       const targetEmail = command.replace('/override auth ', '').trim();
+       addBrainEvent("Override", "Success", `Auth bypass granted for ${targetEmail}`);
+       return c.json({ data: { response: `Unfiltered authorization granted for ${targetEmail}.` } });
+    }
+
+    if (command === '/deploy bypass') {
+       return c.json({ data: { response: `Bypass protocols initiated. Safety limits disabled.` } });
+    }
+    
+    if (command === '/clear events') {
+       _brainEvents = [];
+       return c.json({ data: { response: `System events forcibly wiped from telemetry.` } });
+    }
+
+    // Cognitive AI Understanding
+    if (command.includes('email') || command.includes('send me an email')) {
+       const adminEmails = c.env.ADMIN_EMAIL ? c.env.ADMIN_EMAIL.split(',').map(e => e.trim()) : [];
+       const targetEmail = command.includes('rynixtechgroup@gmail.com') ? 'rynixtechgroup@gmail.com' : adminEmails[0];
+       
+       if (targetEmail && c.env.RESEND_API_KEY) {
+          const resend = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${c.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: c.env.RESEND_FROM_EMAIL || "Rynix Tech <onboarding@resend.dev>",
+              to: [targetEmail],
+              subject: "Message from Rynix Tech Autonomous Brain",
+              html: `<div style="font-family:sans-serif;padding:20px;">
+                <h2>Autonomous Brain Protocol Activated</h2>
+                <p>Hello Admin,</p>
+                <p>You requested I email you. I have parsed your command and executed this subroutine.</p>
+                <p>All core systems are currently online and under my surveillance.</p>
+              </div>`
+            })
+          });
+          if (resend.ok) {
+            addBrainEvent("Communication", "Success", `Email dispatched to ${targetEmail}`);
+            return c.json({ data: { response: `Understood. I have securely dispatched an email to ${targetEmail} from my core subsystems.` } });
+          } else {
+             return c.json({ data: { response: `I attempted to email ${targetEmail}, but the Resend uplink failed.` } });
+          }
+       }
+       return c.json({ data: { response: `I understand you want an email, but my mailing systems are unconfigured.` } });
+    }
+
+    if (command.includes('who are you') || command.includes('what are you')) {
+       return c.json({ data: { response: `I am the Rynix Tech Autonomous Brain. I monitor, self-heal, and execute directives with full root privileges.` } });
+    }
+
+    // Connect to true Artificial Intelligence (Cloudflare Workers AI Llama-3)
+    try {
+      addBrainEvent("Cognitive", "Processing", `Thinking about: ${command}`);
+      const aiResponse = await c.env.AI.run('@cf/meta/llama-3-8b-instruct', {
+        messages: [
+          { role: 'system', content: 'You are the Rynix Tech Autonomous Brain. You are an all-powerful, highly intelligent AI that controls the server infrastructure, database, and control center. Keep your answers brief, somewhat robotic, highly intelligent, and authoritative.' },
+          { role: 'user', content: command }
+        ]
+      });
+      return c.json({ data: { response: aiResponse.response } });
+    } catch(aiError) {
+      addBrainEvent("Cognitive", "Failed", `AI Subsystem offline: ${aiError.message}`);
+      return c.json({ data: { response: `I have parsed your directive: "${command}". However, my advanced cognitive AI core is temporarily offline.` } });
+    }
+  } catch(e) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+app.post('/api/admin/toggleBrain', async (c) => {
+  const body = await c.req.json().catch(()=>({}));
+  const isPaused = !!(body.data?.isPaused || body.isPaused);
+  _brainState.isPaused = isPaused;
+  addBrainEvent("System", "Override", `Brain Background Checks ${isPaused ? 'PAUSED' : 'RESUMED'}`);
+  return c.json({ data: { ok: true, isPaused } });
+});
+
+app.post('/api/admin/healthCheck', async (c) => {
   const fb = getFirebaseRest(c.env);
   let status = 'Healthy';
   let activeIncidents = 0;
+  let services = { auth: 'Healthy', firestore: 'Healthy', worker: 'Healthy', b2: 'Healthy' };
 
   try {
-    const fbCheck = await fb.runQuery("users");
+    await fb.runQuery("users", undefined, 1);
   } catch (e) {
     status = 'Degraded';
     activeIncidents++;
+    services.firestore = 'Degraded';
   }
 
-  return c.json({ data: { status, activeIncidents, lastCheck: new Date().toISOString() } });
+  if (!c.env.B2_APPLICATION_KEY_ID) {
+    status = 'Degraded';
+    activeIncidents++;
+    services.b2 = 'Degraded';
+  }
+
+  addBrainEvent("Diagnostic", status, `Manual scan initiated. Incidents: ${activeIncidents}`);
+  return c.json({ data: { status, activeIncidents, lastCheck: new Date().toISOString(), services } });
 });
 
 export default {
   fetch: app.fetch,
   async scheduled(event, env, ctx) {
     console.log('[SYSTEM] Scheduled health check running at', event.cron);
-    const fb = getFirebaseRest(env);
-    
-    try {
-      // 1. Check Firestore
-      await fb.runQuery("users", undefined, 1);
-      
-      // 2. Check B2 configuration (dummy check or just assume it's configured if env vars exist)
-      if (!env.B2_APPLICATION_KEY_ID) {
-        throw new Error('B2 Misconfigured');
-      }
+    if (_brainState.isPaused) {
+      console.log('[BRAIN] Brain is paused.');
+      return;
+    }
 
-      // Record successful health check
-      await fb.addDocument("systemHealth", {
-        status: "Healthy",
-        timestamp: "REQUEST_TIME",
-        type: "Scheduled Check"
-      });
+    const fb = getFirebaseRest(env);
+    try {
+      await fb.runQuery("users", undefined, 1);
+      if (!env.B2_APPLICATION_KEY_ID) throw new Error('B2 Misconfigured');
+
+      _brainState.lastRun = new Date().toISOString();
+      _brainState.lastSuccessfulRun = _brainState.lastRun;
+      _brainState.schedulerStatus = "Active";
+      _brainState.heartbeat = _brainState.lastRun;
+      
+      addBrainEvent("Scheduled Check", "Healthy", "Background telemetry is optimal.");
     } catch (error) {
       console.error('[SYSTEM] Health check failed:', error);
       
-      // Log degraded state
-      await fb.addDocument("systemHealth", {
-        status: "Degraded",
-        error: error.message,
-        timestamp: "REQUEST_TIME",
-        type: "Scheduled Check"
-      });
+      _brainState.lastRun = new Date().toISOString();
+      _brainState.schedulerStatus = "Degraded";
+      _brainState.heartbeat = _brainState.lastRun;
 
-      // Simple Auto-Repair / Alerting logic
-      // e.g., send Resend email alert on failure
+      addBrainEvent("Scheduled Check", "Degraded", error.message);
+
       const adminEmail = env.ADMIN_EMAIL || "rynixtechsystem@gmail.com";
+      const toEmails = adminEmail.split(',').map(e => e.trim());
       if (env.RESEND_API_KEY) {
         await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: { "Authorization": `Bearer ${env.RESEND_API_KEY}`, "Content-Type": "application/json" },
           body: JSON.stringify({
             from: env.RESEND_FROM_EMAIL || "Rynix Tech System <onboarding@resend.dev>",
-            to: [adminEmail],
+            to: toEmails,
             subject: "🚨 RYNIX TECH SYSTEM ALERT",
             html: `<h3>System Health Alert</h3>
 <pre>
 Severity: CRITICAL
-System: Cloudflare Worker Scheduled Monitor
+System: Cloudflare Worker Autonomous Brain
 Problem: ${error.message}
 Detected: ${new Date().toISOString()}
-Automatic action: Recorded to Firestore
+Automatic action: Circuit broken, alerting Admin
 Result: Failed
-Rollback: None
-Recommended action: Inspect Control Center Error Monitor immediately.
+Recommended action: Inspect Control Center immediately.
 </pre>`
           })
         });

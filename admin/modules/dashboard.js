@@ -1,6 +1,5 @@
-import { db, functions } from '../admin-firebase.js';
+import { db } from '../admin-firebase.js';
 import { collection, query, orderBy, limit, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
-import { getFunctions } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js';
 import { httpsCallable } from '../admin-firebase.js';
 
 export async function render(container) {
@@ -14,12 +13,22 @@ export async function render(container) {
         // We'll mock the counts if the cloud function isn't available
         let stats = { users: 0, products: 0, orders: 0, files: 0, apps: 0, errors: 0 };
         try {
-            const getAdminStats = httpsCallable(functions, 'getAdminStats');
+            const getAdminStats = httpsCallable(null, 'getAdminStats');
             const result = await getAdminStats();
-            stats = result.data;
+            const d = result.data || result;
+            stats = {
+              users: d.totalUsers || d.users || 0,
+              products: d.totalProducts || d.products || 0,
+              orders: d.totalOrders || d.orders || 0,
+              files: d.totalFiles || d.files || 0,
+              apps: d.totalApps || d.apps || 0,
+              errors: d.activeErrors || d.errors || 0,
+              revenue: d.revenue || 0,
+              books: d.books || 0,
+              storageUsed: d.storageUsed || '0 MB'
+            };
         } catch (e) {
-            console.warn("Cloud function getAdminStats failed, using mock data", e);
-            // Fallback: manually fetch some data or use 0
+            console.warn("Cloud function getAdminStats failed, using fallback", e);
         }
 
         const formatNumber = (num) => new Intl.NumberFormat().format(num);
@@ -121,54 +130,81 @@ function setupListeners() {
     const filesList = document.getElementById('files-list');
     const ordersList = document.getElementById('orders-list');
 
-    const activityQ = query(collection(db, 'activityLog'), orderBy('timestamp', 'desc'), limit(8));
-    onSnapshot(activityQ, (snapshot) => {
-        if (snapshot.empty) {
-            activityList.innerHTML = '<li style="color: #aeb8d2;">No activity yet</li>';
-            return;
-        }
-        activityList.innerHTML = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between;">
-                <span>${data.actionIcon || '📝'} ${data.actionText}</span>
-                <span style="color: #aeb8d2; font-size: 0.85em;">${getRelativeTime(data.timestamp)}</span>
-            </li>`;
-        }).join('');
-    });
+    window.retrySnapshot = window.retrySnapshot || {};
 
-    const filesQ = query(collection(db, 'files'), orderBy('uploadedAt', 'desc'), limit(5));
-    onSnapshot(filesQ, (snapshot) => {
-        if (snapshot.empty) {
-            filesList.innerHTML = '<li style="color: #aeb8d2;">No files uploaded</li>';
-            return;
-        }
-        filesList.innerHTML = snapshot.docs.map(doc => {
-            const data = doc.data();
-            const size = (data.size / 1024).toFixed(1) + ' KB';
-            return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div>${data.typeIcon || '📄'} ${data.name}</div>
-                    <div style="color: #aeb8d2; font-size: 0.8em;">${size} • ${getRelativeTime(data.uploadedAt)}</div>
-                </div>
-            </li>`;
-        }).join('');
-    });
+    const handleError = (element, error, retryKey, retryFn) => {
+        console.error(`[Diagnostic] Firestore error for ${retryKey}:`, error.code, error.message);
+        window.retrySnapshot[retryKey] = retryFn;
+        element.innerHTML = `
+            <li style="color: #ff758f; padding: 12px; background: rgba(255,117,143,0.1); border-radius: 6px; border: 1px solid rgba(255,117,143,0.2);">
+                <div style="font-weight: bold; margin-bottom: 4px;">Error Loading Data</div>
+                <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 8px; word-break: break-word;">${error.message || 'Permission denied or network error'}</div>
+                <button onclick="window.retrySnapshot['${retryKey}']()" style="background: #ff758f; color: #0a0e1a; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">Retry Connection</button>
+            </li>
+        `;
+    };
 
-    const ordersQ = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5));
-    onSnapshot(ordersQ, (snapshot) => {
-        if (snapshot.empty) {
-            ordersList.innerHTML = '<li style="color: #aeb8d2;">No orders yet</li>';
-            return;
-        }
-        ordersList.innerHTML = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div>Order #${doc.id.substring(0, 8)}</div>
-                    <div style="color: #aeb8d2; font-size: 0.8em;">$${data.amount}</div>
-                </div>
-                <span style="padding: 4px 8px; border-radius: 4px; background: #55dcff22; color: #55dcff; font-size: 0.8em;">${data.status}</span>
-            </li>`;
-        }).join('');
-    });
+    function setupActivity() {
+        activityList.innerHTML = '<li style="color: #aeb8d2;">Loading...</li>';
+        const activityQ = query(collection(db, 'activityLog'), orderBy('timestamp', 'desc'), limit(8));
+        onSnapshot(activityQ, (snapshot) => {
+            if (snapshot.empty) {
+                activityList.innerHTML = '<li style="color: #aeb8d2;">No activity yet</li>';
+                return;
+            }
+            activityList.innerHTML = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between;">
+                    <span>${data.actionIcon || '📝'} ${data.actionText || 'Unknown Action'}</span>
+                    <span style="color: #aeb8d2; font-size: 0.85em;">${getRelativeTime(data.timestamp)}</span>
+                </li>`;
+            }).join('');
+        }, (error) => handleError(activityList, error, 'activity', setupActivity));
+    }
+
+    function setupFiles() {
+        filesList.innerHTML = '<li style="color: #aeb8d2;">Loading...</li>';
+        const filesQ = query(collection(db, 'files'), orderBy('uploadedAt', 'desc'), limit(5));
+        onSnapshot(filesQ, (snapshot) => {
+            if (snapshot.empty) {
+                filesList.innerHTML = '<li style="color: #aeb8d2;">No files uploaded</li>';
+                return;
+            }
+            filesList.innerHTML = snapshot.docs.map(doc => {
+                const data = doc.data();
+                const size = ((data.size || 0) / 1024).toFixed(1) + ' KB';
+                return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
+                        <div>${data.typeIcon || '📄'} ${data.name || 'Unnamed file'}</div>
+                        <div style="color: #aeb8d2; font-size: 0.8em;">${size} • ${getRelativeTime(data.uploadedAt)}</div>
+                    </div>
+                </li>`;
+            }).join('');
+        }, (error) => handleError(filesList, error, 'files', setupFiles));
+    }
+
+    function setupOrders() {
+        ordersList.innerHTML = '<li style="color: #aeb8d2;">Loading...</li>';
+        const ordersQ = query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(5));
+        onSnapshot(ordersQ, (snapshot) => {
+            if (snapshot.empty) {
+                ordersList.innerHTML = '<li style="color: #aeb8d2;">No orders yet</li>';
+                return;
+            }
+            ordersList.innerHTML = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div>Order #${doc.id.substring(0, 8)}</div>
+                        <div style="color: #aeb8d2; font-size: 0.8em;">$${data.amount || 0}</div>
+                    </div>
+                    <span style="padding: 4px 8px; border-radius: 4px; background: #55dcff22; color: #55dcff; font-size: 0.8em;">${data.status || 'pending'}</span>
+                </li>`;
+            }).join('');
+        }, (error) => handleError(ordersList, error, 'orders', setupOrders));
+    }
+
+    setupActivity();
+    setupFiles();
+    setupOrders();
 }

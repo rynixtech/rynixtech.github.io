@@ -1,6 +1,5 @@
-import { db, storage } from '../admin-firebase.js';
+import { db, deleteB2Object } from '../admin-firebase.js';
 import { collection, query, orderBy, getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js';
 
 export async function render(container) {
     container.innerHTML = `
@@ -98,7 +97,7 @@ async function loadApps() {
 window.deleteApp = async (id, fullPath) => {
     if(!confirm('Delete this app entirely?')) return;
     try {
-        if(fullPath) await deleteObject(ref(storage, fullPath));
+        if(fullPath) await deleteB2Object(fullPath);
         await deleteDoc(doc(db, 'apps', id));
         loadApps();
     } catch(e) {

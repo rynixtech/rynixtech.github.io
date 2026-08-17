@@ -17,6 +17,7 @@ export function requireAdmin() {
 
 export async function handleLogout() {
   try {
+    sessionStorage.removeItem('rynix_admin_mode');
     await signOut(auth);
     window.location.href = '../login.html';
   } catch (error) {
@@ -62,6 +63,10 @@ onAuthStateChanged(auth, async (user) => {
     try {
       const idTokenResult = await getIdTokenResult(user, true);
       if (idTokenResult.claims.admin === true) {
+        if (sessionStorage.getItem('rynix_admin_mode') !== 'admin') {
+          window.location.replace('../mode.html');
+          return;
+        }
         showApp(user);
       } else {
         showAccessDenied();

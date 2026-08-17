@@ -150,7 +150,6 @@ export class SystemUploader {
           xhr.onload = () => {
             cleanup();
             if (xhr.status >= 200 && xhr.status < 300) {
-              const R2_DOMAIN = 'https://assets.rynixtech.com';
               const publicUrl = category === 'documents' 
                   ? `https://rynixtech-control-center-worker.rynixtech.workers.dev/api/documents/${objectKey.split('/').pop()}`
                   : `https://rynixtech-control-center-worker.rynixtech.workers.dev/${objectKey}`;

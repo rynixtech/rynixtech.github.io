@@ -41,7 +41,7 @@
       </button>
       
       <div class="divider">or</div>
-      <button class="button button-google" type="button" onclick="googleLogin()">Continue with Google</button>
+      <button id="googleBtn" class="button button-google" type="button">Continue with Google</button>
     </form>
 
     <div class="message" id="message" role="status" aria-live="polite"></div>
@@ -51,16 +51,19 @@
   <script type="module">
     import { auth } from './firebase.js';
     import { createUserWithEmailAndPassword, sendEmailVerification, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
-    import { ensureUserProfile } from './auth.js';
+    import { ensureUserProfile, googleLogin, redirectBasedOnRole } from './auth.js';
 
     const signupForm = document.getElementById('signupForm');
     const email = document.getElementById('email');
     const password = document.getElementById('password');
     const confirmPassword = document.getElementById('confirmPassword');
     const signupBtn = document.getElementById('signupBtn');
+    const googleBtn = document.getElementById('googleBtn');
     const message = document.getElementById('message');
 
-    // If already logged in & verified, redirect to index
+    googleBtn.addEventListener('click', googleLogin);
+
+    // If already logged in & verified, redirect
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
@@ -68,7 +71,7 @@
         } catch (err) {}
         const currentUser = auth.currentUser;
         if (currentUser && currentUser.emailVerified) {
-          window.location.replace('index.html');
+          await redirectBasedOnRole(currentUser);
         }
       }
     });

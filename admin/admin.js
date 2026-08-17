@@ -95,6 +95,7 @@ const sidebarStructure = [
     group: 'SYSTEM',
     items: [
       { id: 'health', icon: '❤️', label: 'System Health', route: './modules/health.js' },
+      { id: 'brain_assistant', icon: '🧠', label: 'Brain Assistant', route: './modules/brain_assistant.js' },
       { id: 'errors', icon: '⚠️', label: 'Error Monitor', route: './modules/errors.js' },
       { id: 'autorepair', icon: '🔧', label: 'Auto Repair', route: './modules/autorepair.js' },
       { id: 'repairhistory', icon: '🕒', label: 'Repair History', route: './modules/repairhistory.js' },
@@ -240,6 +241,7 @@ function initHeader(user) {
       <input type="text" id="admin-search-input" placeholder="Search…" autocomplete="off">
     </div>
     <div class="header-actions">
+      <button class="btn btn-ghost btn-sm" id="header-switch-btn" title="Switch to Customer Mode" style="color: var(--primary); font-weight: bold;">👤 Customer</button>
       <button class="header-action-btn" id="notification-btn" title="Notifications">
         🔔<span class="notification-badge" id="notif-badge" hidden>0</span>
       </button>
@@ -254,6 +256,10 @@ function initHeader(user) {
   headerTitle = document.getElementById('header-title');
   document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileSidebar);
   document.getElementById('header-logout-btn').addEventListener('click', handleLogout);
+  document.getElementById('header-switch-btn').addEventListener('click', () => {
+    sessionStorage.setItem('rynix_admin_mode', 'customer');
+    window.location.href = '../dashboard.html';
+  });
 
   const searchInput = document.getElementById('admin-search-input');
   let searchTimeout;

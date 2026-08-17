@@ -91,128 +91,61 @@
     
     <section class="content-section">
       <div class="section-header">
-        <h2>Featured OS</h2>
-      </div>
-      
-      <div class="featured-os-card">
-        <div>
-          <span class="os-badge">Stable Release</span>
-          <h3 class="os-title">Rynix OS Core</h3>
-          <p style="color: var(--muted); font-size: 1.1rem; max-width: 500px; line-height: 1.6;">
-            A lightweight, secure, and incredibly fast operating system built for developers and edge computing architectures. Complete isolation by design.
-          </p>
-          
-          <div class="tech-specs">
-            <div class="spec-item">
-              <span>Version</span>
-              <strong>1.4.2 (LTS)</strong>
-            </div>
-            <div class="spec-item">
-              <span>Architecture</span>
-              <strong>ARM64 / x86_64</strong>
-            </div>
-            <div class="spec-item">
-              <span>Build</span>
-              <strong>#89234</strong>
-            </div>
-            <div class="spec-item">
-              <span>Platform</span>
-              <strong>Desktop / Server</strong>
-            </div>
-            <div class="spec-item">
-              <span>Size</span>
-              <strong>1.2 GB</strong>
-            </div>
-            <div class="spec-item">
-              <span>Release</span>
-              <strong>Aug 2026</strong>
-            </div>
-          </div>
-          
-          <div class="os-actions">
-            <button class="button button-primary">Download ISO</button>
-            <button class="button button-quiet">View Changelog</button>
-            <button class="button button-quiet">Documentation</button>
-          </div>
-        </div>
-        
-        <div style="background: rgba(0,0,0,0.5); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; min-height: 300px; color: var(--muted);">
-          [ Screenshot / UI Preview ]
-        </div>
-      </div>
-    </section>
-
-    <section class="content-section">
-      <div class="section-header">
         <h2>Latest Releases</h2>
-        <a href="#" style="color: var(--gold-soft); font-size: 0.9rem; text-decoration: none; font-weight: 700;">View all releases →</a>
       </div>
       
-      <div class="release-grid">
-        <article class="release-card">
-          <h3>Rynix OS Nano</h3>
-          <div class="release-meta">
-            <span class="meta-tag">v0.9.1 Beta</span>
-            <span class="meta-tag">IoT / Edge</span>
-            <span class="meta-tag">ARM32</span>
-          </div>
-          <p class="release-desc">Ultra-minimalist kernel for embedded devices. Includes new GPIO security isolation modules.</p>
-          <div class="download-row">
-            <span class="download-size">Size: 45 MB</span>
-            <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;">Download IMG</button>
-          </div>
-        </article>
-        
-        <article class="release-card">
-          <h3>Rynix Workspace</h3>
-          <div class="release-meta">
-            <span class="meta-tag">v2.1.0 Stable</span>
-            <span class="meta-tag">Enterprise Desktop</span>
-            <span class="meta-tag">x86_64</span>
-          </div>
-          <p class="release-desc">Full desktop environment with integrated developer tools and hardware-backed credential storage.</p>
-          <div class="download-row">
-            <span class="download-size">Size: 2.4 GB</span>
-            <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;">Download ISO</button>
-          </div>
-        </article>
-        
-        <article class="release-card">
-          <h3>Rynix Server Core</h3>
-          <div class="release-meta">
-            <span class="meta-tag">v1.4.2 Stable</span>
-            <span class="meta-tag">Cloud / Server</span>
-            <span class="meta-tag">Multi-arch</span>
-          </div>
-          <p class="release-desc">Headless server distribution optimized for container orchestration and massive IO throughput.</p>
-          <div class="download-row">
-            <span class="download-size">Size: 450 MB</span>
-            <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;">Download ISO</button>
-          </div>
-        </article>
-      </div>
-    </section>
-    
-    <section class="content-section">
-      <div class="section-header">
-        <h2>Recently Updated</h2>
-      </div>
-      <div class="release-grid">
-         <article class="release-card">
-          <h3>Rynix OS Core Patch</h3>
-          <div class="release-meta">
-            <span class="meta-tag">Build #89235</span>
-            <span class="meta-tag">Hotfix</span>
-          </div>
-          <p class="release-desc">Security patch addressing a minor vulnerability in the networking stack. Recommended for all users.</p>
-          <div class="download-row">
-            <span class="download-size">Updated: 2 days ago</span>
-            <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;">Read Notes</button>
-          </div>
-        </article>
+      <div class="release-grid" id="osGrid">
+        <div style="grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px;">Loading releases...</div>
       </div>
     </section>
 
   </main>
+
+  <script type="module">
+    import { db } from './firebase.js';
+    import { collection, query, getDocs, where } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+
+    async function loadOsReleases() {
+      const grid = document.getElementById('osGrid');
+      try {
+        const q = query(collection(db, 'os_releases'), where('status', '==', 'published'));
+        const snapshot = await getDocs(q);
+        
+        if (snapshot.empty) {
+          grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--muted); padding: 40px;">No public OS releases available.</div>';
+          return;
+        }
+
+        grid.innerHTML = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return `
+            <article class="release-card">
+              <h3>${data.name || 'Unnamed OS'}</h3>
+              <div class="release-meta">
+                <span class="meta-tag">v${data.version || '1.0.0'}</span>
+                <span class="meta-tag">Build ${data.build || 'N/A'}</span>
+                <span class="meta-tag">${data.architecture || 'Multi-arch'}</span>
+              </div>
+              <p class="release-desc">${data.description || 'No description provided.'}</p>
+              
+              <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 15px;">
+                 <strong>Release Date:</strong> ${data.releaseDate || 'Unknown'}<br>
+                 <strong>Supported Devices:</strong> ${data.supportedDevices || 'All standard devices'}
+              </div>
+
+              <div class="download-row">
+                <span class="download-size">Size: ${data.size ? (data.size / 1024 / 1024).toFixed(1) + ' MB' : 'Unknown'}</span>
+                <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;" onclick="window.open('${data.downloadUrl || '#'}', '_blank')">Download ISO</button>
+              </div>
+            </article>
+          `;
+        }).join('');
+      } catch (err) {
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ff758f; padding: 40px;">Failed to load OS releases.</div>';
+      }
+    }
+
+    loadOsReleases();
+  </script>
 </body>
 </html>

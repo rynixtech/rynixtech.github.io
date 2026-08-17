@@ -12,3 +12,9 @@ compatibility_date = "2024-03-04"
 
 [triggers]
 crons = [ "*/15 * * * *" ]
+
+[vars]
+ADMIN_EMAIL = "rynixtechgroup@gmail.com, rynixtechsystem@gmail.com, rynixtechteam@gmail.com, mdaftab04201@gmail.com, aniketpawar3246@gmail.com"
+
+[ai]
+binding = "AI"

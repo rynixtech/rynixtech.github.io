@@ -1,5 +1,4 @@
 import { db } from '../admin-firebase.js';
-import { getFunctions } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-functions.js';
 import { httpsCallable } from '../admin-firebase.js';
 import { doc, getDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
@@ -39,10 +38,9 @@ export async function render(container) {
     `;
 
     const tbody = document.getElementById('users-tbody');
-    const functions = getFunctions();
-    const listUsers = httpsCallable(functions, 'listUsers');
-    const disableUser = httpsCallable(functions, 'disableUser');
-    const enableUser = httpsCallable(functions, 'enableUser');
+    const listUsers = httpsCallable(null, 'listUsers');
+    const disableUser = httpsCallable(null, 'disableUser');
+    const enableUser = httpsCallable(null, 'enableUser');
 
     async function loadUsers() {
         try {
