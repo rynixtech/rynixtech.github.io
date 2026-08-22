@@ -178,13 +178,13 @@
 
       // Update Header
       const displayName = currentProfile?.displayName || user.displayName || (user.email ? user.email.split('@')[0] : 'User');
-      headerActions.innerHTML = \`
+      headerActions.innerHTML = `
         <span class="button button-quiet" style="gap: 6px; cursor: default;">
-          👤 \${displayName}
+          👤 ${displayName}
         </span>
-        \${isAdmin ? '<button onclick="switchMode(\\'admin\\')" class="button button-primary" style="background:#4ade80; color:#0a0e1a; cursor: pointer;">Admin Control Center</button>' : ''}
+        ${isAdmin ? '<button onclick="switchMode('admin')" class="button button-primary" style="background:#4ade80; color:#0a0e1a; cursor: pointer;">Admin Control Center</button>' : ''}
         <button onclick="logout()" class="button button-quiet">Log out</button>
-      \`;
+      `;
 
       handleRoute();
     });
@@ -194,28 +194,28 @@
       const initial = email.charAt(0).toUpperCase();
       const creationDate = new Date(parseInt(currentUserData.metadata.createdAt)).toLocaleDateString();
       
-      contentDiv.innerHTML = \`
+      contentDiv.innerHTML = `
         <h2>Personal Details</h2>
         <div class="profile-header">
-          <div class="profile-avatar">\${initial}</div>
+          <div class="profile-avatar">${initial}</div>
           <div>
-            <h3 style="margin: 0; font-size: 1.5rem;">\${email.split('@')[0]}</h3>
-            <p style="margin: 5px 0 0; color: var(--muted);">\${email}</p>
+            <h3 style="margin: 0; font-size: 1.5rem;">${email.split('@')[0]}</h3>
+            <p style="margin: 5px 0 0; color: var(--muted);">${email}</p>
             <span style="display:inline-block; margin-top:8px; padding: 4px 10px; background: rgba(74, 222, 128, 0.1); color: #4ade80; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">Account Active</span>
           </div>
         </div>
         <div class="grid-2">
           <div class="card-item">
             <h4>Account ID</h4>
-            <p>\${currentUserData.uid}</p>
+            <p>${currentUserData.uid}</p>
           </div>
           <div class="card-item">
             <h4>Member Since</h4>
-            <p>\${creationDate}</p>
+            <p>${creationDate}</p>
           </div>
           <div class="card-item">
             <h4>Role</h4>
-            <p>\${isAdmin ? 'Administrator' : 'Customer'}</p>
+            <p>${isAdmin ? 'Administrator' : 'Customer'}</p>
           </div>
         </div>
         <div style="margin-top: 30px;">
@@ -271,29 +271,29 @@
         <div class="card-item" style="text-align: center; padding: 40px 20px;">
           <p>You have not saved any addresses yet.</p>
         </div>
-      \`;
+      `;
     }
 
     function renderWishlist() {
-      contentDiv.innerHTML = \`
+      contentDiv.innerHTML = `
         <h2>Wishlist</h2>
         <div class="card-item" style="text-align: center; padding: 40px 20px;">
           <p>Your wishlist is empty.</p>
         </div>
-      \`;
+      `;
     }
 
     function renderDownloads() {
-      contentDiv.innerHTML = \`
+      contentDiv.innerHTML = `
         <h2>Digital Downloads</h2>
         <div class="card-item" style="text-align: center; padding: 40px 20px;">
           <p>No digital products or apps available to download.</p>
         </div>
-      \`;
+      `;
     }
 
     function renderSettings() {
-      contentDiv.innerHTML = \`
+      contentDiv.innerHTML = `
         <h2>Account Settings</h2>
         <div class="card-item" style="margin-bottom: 20px;">
           <h4>Email Preferences</h4>
@@ -308,7 +308,7 @@
           <h4>Security</h4>
           <button class="button button-quiet" style="margin-top:10px;">Change Password</button>
         </div>
-      \`;
+      `;
     }
 
     function handleRoute() {
