@@ -245,8 +245,58 @@ app.get('/public/:category/:filename', async (c) => {
   }
 });
 
+// --- Public Contact Endpoint ---
+app.post('/api/public/contact', async (c) => {
+  try {
+    const { name, email, message } = await c.req.json();
+    if (!name || !email || !message) {
+      return c.json({ error: 'Name, email, and message are required.' }, 400);
+    }
+
+    if (!c.env.RESEND_API_KEY) {
+      return c.json({ error: 'Email service is not configured on the server.' }, 500);
+    }
+
+    const adminEmails = c.env.ADMIN_EMAIL ? c.env.ADMIN_EMAIL.split(',').map(e => e.trim()) : [];
+    if (adminEmails.length === 0) {
+       return c.json({ error: 'No admin emails configured to receive messages.' }, 500);
+    }
+
+    const resend = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${c.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        from: c.env.RESEND_FROM_EMAIL || "Rynix Tech Contact <onboarding@resend.dev>",
+        to: adminEmails,
+        reply_to: email,
+        subject: `New Contact Message from ${name}`,
+        html: `<div style="font-family:sans-serif;padding:20px;">
+          <h2>New Contact Form Submission</h2>
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Message:</strong></p>
+          <blockquote style="border-left: 4px solid #ccc; padding-left: 10px; color: #555;">
+            ${message.replace(/\n/g, '<br>')}
+          </blockquote>
+        </div>`
+      })
+    });
+
+    if (!resend.ok) {
+      const errText = await resend.text();
+      console.error('Resend error:', errText);
+      return c.json({ error: "Could not send email. Please try again later." }, 500);
+    }
+
+    addBrainEvent("Contact", "Success", `Message received from ${email}`);
+    return c.json({ ok: true });
+  } catch (err) {
+    console.error('Contact form error:', err);
+    return c.json({ error: 'Internal Server Error' }, 500);
+  }
+});
+
 // --- Admin Endpoints ---
-async function logActivity(fb, adminUid, action, resource, resourceId, details) {
   await fb.addDocument("activityLog", {
     adminUid, action, resource, resourceId, details: details || null,
     timestamp: "REQUEST_TIME"
