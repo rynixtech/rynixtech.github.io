@@ -4,7 +4,6 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutB
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as jose from 'jose';
 import { FirebaseRest } from './firebase-rest';
-import { OTP_TTL_MS, OTP_COOLDOWN_MS, MAX_ATTEMPTS, normalizeEmail, assertPassword, createOtp, emailKey, hashOtp, safeEqual } from './otp-logic';
 
 const app = new Hono();
 
@@ -421,132 +420,7 @@ app.post('/api/admin/enableUser', async (c) => {
   return c.json({ data: { ok: true } });
 });
 
-// --- OTP Auth Endpoints ---
 
-async function sendOtp(c, flow, rawEmail) {
-  const email = normalizeEmail(rawEmail);
-  const fb = getFirebaseRest(c.env);
-  const key = await emailKey(email);
-  const docId = `${flow}_${key}`;
-  
-  const now = Date.now();
-  const code = createOtp();
-  const hash = await hashOtp({ secret: c.env.OTP_HASH_SECRET, flow, email, code });
-  const expiresAt = now + OTP_TTL_MS;
-  const cooldownUntil = now + OTP_COOLDOWN_MS;
-
-  const existing = await fb.getDocument("emailOtps", docId);
-  if (existing && existing.cooldownUntil && new Date(existing.cooldownUntil).getTime() > now) {
-    const cooldownSeconds = Math.ceil((new Date(existing.cooldownUntil).getTime() - now) / 1000);
-    return c.json({ error: `Please wait ${cooldownSeconds} seconds before requesting another code.` }, 429);
-  }
-
-  await fb.setDocument("emailOtps", docId, {
-    flow, emailHash: key, codeHash: hash, attempts: 0, maxAttempts: MAX_ATTEMPTS,
-    expiresAt: { isTimestamp: true, value: new Date(expiresAt).toISOString() },
-    cooldownUntil: { isTimestamp: true, value: new Date(cooldownUntil).toISOString() },
-    updatedAt: "REQUEST_TIME"
-  });
-
-  const resend = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${c.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      from: c.env.RESEND_FROM_EMAIL || "Rynix Tech <onboarding@resend.dev>",
-      to: [email],
-      subject: "Your Rynix Tech verification code",
-      html: `<div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:24px"><h1>Rynix Tech</h1><p>Use this code to verify:</p><p style="font-size:32px;font-weight:bold;letter-spacing:8px">${code}</p><p>This code expires in 10 minutes. Do not share it.</p></div>`
-    })
-  });
-  if (!resend.ok) {
-    await fb.deleteDocument("emailOtps", docId);
-    return c.json({ error: "Could not send email." }, 500);
-  }
-  return c.json({ data: { ok: true, cooldownSeconds: Math.ceil(OTP_COOLDOWN_MS / 1000), expiresInSeconds: Math.ceil(OTP_TTL_MS / 1000) } });
-}
-
-async function verifyOtp(fb, flow, email, code, secret) {
-  if (typeof code !== "string" || !/^\d{6}$/.test(code)) throw new Error("Enter the 6-digit verification code.");
-  const key = await emailKey(email);
-  const docId = `${flow}_${key}`;
-  
-  const record = await fb.getDocument("emailOtps", docId);
-  if (!record) throw new Error("No active code was found. Request a new code.");
-  
-  const now = Date.now();
-  if (new Date(record.expiresAt).getTime() <= now) {
-    await fb.deleteDocument("emailOtps", docId);
-    throw new Error("This code has expired. Request a new one.");
-  }
-  if (record.attempts >= MAX_ATTEMPTS) {
-    await fb.deleteDocument("emailOtps", docId);
-    throw new Error("Too many incorrect attempts. Request a new code.");
-  }
-  
-  const expected = await hashOtp({ secret, flow, email, code });
-  if (!safeEqual(record.codeHash, expected)) {
-    const attempts = (record.attempts || 0) + 1;
-    if (attempts >= MAX_ATTEMPTS) await fb.deleteDocument("emailOtps", docId);
-    else await fb.setDocument("emailOtps", docId, { attempts });
-    throw new Error(`Incorrect code. ${MAX_ATTEMPTS - attempts} attempts remaining.`);
-  }
-  await fb.deleteDocument("emailOtps", docId);
-}
-
-app.post('/api/auth/requestSignupOtp', async (c) => {
-  try {
-    const body = await c.req.json().catch(()=>({}));
-    const data = body.data || body;
-    const email = normalizeEmail(data.email);
-    const fb = getFirebaseRest(c.env);
-    const existing = await fb.getUserByEmail(email);
-    if (existing) return c.json({ error: "An account already exists for this email. Please log in." }, 400);
-    return await sendOtp(c, "signup", email);
-  } catch (e) { return c.json({ error: e.message }, 400); }
-});
-
-app.post('/api/auth/verifySignupOtp', async (c) => {
-  try {
-    const body = await c.req.json().catch(()=>({}));
-    const data = body.data || body;
-    const email = normalizeEmail(data.email);
-    assertPassword(data.password);
-    const fb = getFirebaseRest(c.env);
-    await verifyOtp(fb, "signup", email, data.code, c.env.OTP_HASH_SECRET);
-    
-    const { uid } = await fb.createUser({ email, password: data.password, emailVerified: true });
-    await fb.setDocument("users", uid, { email, role: "user", createdAt: "REQUEST_TIME" });
-    return c.json({ data: { ok: true } });
-  } catch (e) { return c.json({ error: e.message }, 400); }
-});
-
-app.post('/api/auth/requestPasswordResetOtp', async (c) => {
-  try {
-    const body = await c.req.json().catch(()=>({}));
-    const data = body.data || body;
-    const email = normalizeEmail(data.email);
-    const fb = getFirebaseRest(c.env);
-    const existing = await fb.getUserByEmail(email);
-    // If not found, pretend it succeeds (security best practice)
-    if (!existing) return c.json({ data: { ok: true, cooldownSeconds: Math.ceil(OTP_COOLDOWN_MS/1000) } });
-    return await sendOtp(c, "password-reset", email);
-  } catch (e) { return c.json({ error: e.message }, 400); }
-});
-
-app.post('/api/auth/verifyPasswordResetOtp', async (c) => {
-  try {
-    const body = await c.req.json().catch(()=>({}));
-    const data = body.data || body;
-    const email = normalizeEmail(data.email);
-    assertPassword(data.password);
-    const fb = getFirebaseRest(c.env);
-    await verifyOtp(fb, "password-reset", email, data.code, c.env.OTP_HASH_SECRET);
-    
-    const user = await fb.getUserByEmail(email);
-    if (user) await fb.updateUser(user.localId, { password: data.password });
-    return c.json({ data: { ok: true } });
-  } catch (e) { return c.json({ error: e.message }, 400); }
-});
 
 app.onError((err, c) => {
   console.error(err.stack); // log internally

@@ -64,8 +64,7 @@ onAuthStateChanged(auth, async (user) => {
       const idTokenResult = await getIdTokenResult(user, true);
       if (idTokenResult.claims.admin === true) {
         if (sessionStorage.getItem('rynix_admin_mode') !== 'admin') {
-          window.location.replace('../mode.html');
-          return;
+          sessionStorage.setItem('rynix_admin_mode', 'admin');
         }
         showApp(user);
       } else {

@@ -1,4 +1,4 @@
-import { db } from '../admin-firebase.js';
+import { db , escapeHTML} from '../admin-firebase.js';
 import { collection, query, orderBy, limit, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 import { httpsCallable } from '../admin-firebase.js';
 
@@ -54,31 +54,31 @@ export async function render(container) {
                 <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; margin-bottom: 32px;">
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">👥 Total Users</div>
-                        <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.users)}</div>
+                        <div style="font-size: 2em; color: #f4f7ff;">${escapeHTML(formatNumber(stats.users))}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">📦 Products</div>
-                        <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.products)}</div>
+                        <div style="font-size: 2em; color: #f4f7ff;">${escapeHTML(formatNumber(stats.products))}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">🛒 Orders</div>
-                        <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.orders)}</div>
+                        <div style="font-size: 2em; color: #f4f7ff;">${escapeHTML(formatNumber(stats.orders))}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">💰 Revenue</div>
-                        <div style="font-size: 2em; color: #64dfac;">$${formatNumber(stats.revenue || 0)}</div>
+                        <div style="font-size: 2em; color: #64dfac;">$${escapeHTML(formatNumber(stats.revenue || 0))}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">📁 Files</div>
-                        <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.files)}</div>
+                        <div style="font-size: 2em; color: #f4f7ff;">${escapeHTML(formatNumber(stats.files))}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">📱 Apps</div>
-                        <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.apps)}</div>
+                        <div style="font-size: 2em; color: #f4f7ff;">${escapeHTML(formatNumber(stats.apps))}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">📖 Books</div>
-                        <div style="font-size: 2em; color: #f4f7ff;">${formatNumber(stats.books || 0)}</div>
+                        <div style="font-size: 2em; color: #f4f7ff;">${escapeHTML(formatNumber(stats.books || 0))}</div>
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">💾 Storage Used</div>
@@ -86,7 +86,7 @@ export async function render(container) {
                     </div>
                     <div class="stat-card" style="background: #0f1425; padding: 20px; border-radius: 8px;">
                         <div style="color: #aeb8d2; font-size: 0.9em;">⚠️ Active Errors</div>
-                        <div style="font-size: 2em; color: ${stats.errors > 0 ? '#ff758f' : '#64dfac'};">${formatNumber(stats.errors)}</div>
+                        <div style="font-size: 2em; color: ${stats.errors > 0 ? '#ff758f' : '#64dfac'};">${escapeHTML(formatNumber(stats.errors))}</div>
                     </div>
                 </div>
 
@@ -138,8 +138,8 @@ function setupListeners() {
         element.innerHTML = `
             <li style="color: #ff758f; padding: 12px; background: rgba(255,117,143,0.1); border-radius: 6px; border: 1px solid rgba(255,117,143,0.2);">
                 <div style="font-weight: bold; margin-bottom: 4px;">Error Loading Data</div>
-                <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 8px; word-break: break-word;">${error.message || 'Permission denied or network error'}</div>
-                <button onclick="window.retrySnapshot['${retryKey}']()" style="background: #ff758f; color: #0a0e1a; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">Retry Connection</button>
+                <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 8px; word-break: break-word;">${escapeHTML(error.message || 'Permission denied or network error')}</div>
+                <button onclick="window.retrySnapshot['${escapeHTML(retryKey)}']()" style="background: #ff758f; color: #0a0e1a; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">Retry Connection</button>
             </li>
         `;
     };
@@ -155,8 +155,8 @@ function setupListeners() {
             activityList.innerHTML = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between;">
-                    <span>${data.actionIcon || '📝'} ${data.actionText || 'Unknown Action'}</span>
-                    <span style="color: #aeb8d2; font-size: 0.85em;">${getRelativeTime(data.timestamp)}</span>
+                    <span>${data.actionIcon || '📝'} ${escapeHTML(data.actionText || 'Unknown Action')}</span>
+                    <span style="color: #aeb8d2; font-size: 0.85em;">${escapeHTML(getRelativeTime(data.timestamp))}</span>
                 </li>`;
             }).join('');
         }, (error) => handleError(activityList, error, 'activity', setupActivity));
@@ -175,8 +175,8 @@ function setupListeners() {
                 const size = ((data.size || 0) / 1024).toFixed(1) + ' KB';
                 return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between; align-items: center;">
                     <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
-                        <div>${data.typeIcon || '📄'} ${data.name || 'Unnamed file'}</div>
-                        <div style="color: #aeb8d2; font-size: 0.8em;">${size} • ${getRelativeTime(data.uploadedAt)}</div>
+                        <div>${data.typeIcon || '📄'} ${escapeHTML(data.name || 'Unnamed file')}</div>
+                        <div style="color: #aeb8d2; font-size: 0.8em;">${escapeHTML(size)} • ${escapeHTML(getRelativeTime(data.uploadedAt))}</div>
                     </div>
                 </li>`;
             }).join('');
@@ -196,9 +196,9 @@ function setupListeners() {
                 return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <div>Order #${doc.id.substring(0, 8)}</div>
-                        <div style="color: #aeb8d2; font-size: 0.8em;">$${data.amount || 0}</div>
+                        <div style="color: #aeb8d2; font-size: 0.8em;">$${escapeHTML(data.amount || 0)}</div>
                     </div>
-                    <span style="padding: 4px 8px; border-radius: 4px; background: #55dcff22; color: #55dcff; font-size: 0.8em;">${data.status || 'pending'}</span>
+                    <span style="padding: 4px 8px; border-radius: 4px; background: #55dcff22; color: #55dcff; font-size: 0.8em;">${escapeHTML(data.status || 'pending')}</span>
                 </li>`;
             }).join('');
         }, (error) => handleError(ordersList, error, 'orders', setupOrders));

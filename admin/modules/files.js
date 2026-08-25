@@ -1,4 +1,4 @@
-import { db, auth, deleteB2Object } from '../admin-firebase.js';
+import { db, auth, deleteB2Object , escapeHTML} from '../admin-firebase.js';
 import { collection, query, where, orderBy, limit, startAfter, getDocs, doc, updateDoc, deleteDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -88,14 +88,14 @@ async function loadFiles() {
             return `
                 <tr style="border-bottom: 1px solid rgba(183,202,255,0.05);">
                     <td style="padding: 12px 16px; display: flex; align-items: center; gap: 8px;">
-                        📄 <span>${data.name}</span>
+                        📄 <span>${escapeHTML(data.name)}</span>
                     </td>
-                    <td style="padding: 12px 16px;"><span style="padding: 2px 6px; background: rgba(85,220,255,0.1); border-radius: 4px; font-size: 0.85em;">${data.contentType || 'unknown'}</span></td>
-                    <td style="padding: 12px 16px;">${size}</td>
-                    <td style="padding: 12px 16px;">${date}</td>
+                    <td style="padding: 12px 16px;"><span style="padding: 2px 6px; background: rgba(85,220,255,0.1); border-radius: 4px; font-size: 0.85em;">${escapeHTML(data.contentType || 'unknown')}</span></td>
+                    <td style="padding: 12px 16px;">${escapeHTML(size)}</td>
+                    <td style="padding: 12px 16px;">${escapeHTML(date)}</td>
                     <td style="padding: 12px 16px;">
-                        <button onclick="navigator.clipboard.writeText('${data.url}'); alert('URL Copied!')" style="background: none; border: none; color: #55dcff; cursor: pointer;" title="Copy URL">📋</button>
-                        <button onclick="deleteFile('${doc.id}', '${data.fullPath}')" style="background: none; border: none; color: #ff758f; cursor: pointer; margin-left: 8px;" title="Delete">🗑️</button>
+                        <button onclick="navigator.clipboard.writeText('${escapeHTML(data.url)}'); alert('URL Copied!')" style="background: none; border: none; color: #55dcff; cursor: pointer;" title="Copy URL">📋</button>
+                        <button onclick="deleteFile('${escapeHTML(doc.id)}', '${escapeHTML(data.fullPath)}')" style="background: none; border: none; color: #ff758f; cursor: pointer; margin-left: 8px;" title="Delete">🗑️</button>
                     </td>
                 </tr>
             `;

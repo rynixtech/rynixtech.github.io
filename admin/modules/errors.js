@@ -1,4 +1,4 @@
-import { db } from '../admin-firebase.js';
+import { db , escapeHTML} from '../admin-firebase.js';
 import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -67,23 +67,23 @@ export async function render(container) {
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${icon} ${data.type || data.system || 'Error'}</td>
+                    <td>${escapeHTML(icon)} ${escapeHTML(data.type || data.system || 'Error')}</td>
                     <td>${(data.message || data.error || '').substring(0, 50)}...</td>
-                    <td>${data.pageUrl || data.component || 'N/A'}</td>
-                    <td>${data.count || 1}</td>
-                    <td>${dateStr}</td>
-                    <td><span class="badge ${data.status === 'resolved' ? 'success' : 'danger'}">${data.status || 'open'}</span></td>
+                    <td>${escapeHTML(data.pageUrl || data.component || 'N/A')}</td>
+                    <td>${escapeHTML(data.count || 1)}</td>
+                    <td>${escapeHTML(dateStr)}</td>
+                    <td><span class="badge ${data.status === 'resolved' ? 'success' : 'danger'}">${escapeHTML(data.status || 'open')}</span></td>
                     <td>
                         ${data.status !== 'resolved' ? \`<button class="btn resolve-btn" data-id="${docSnap.id}">Resolve</button>\` : ''}
-                        <button class="btn danger delete-btn" data-id="${docSnap.id}">Delete</button>
+                        <button class="btn danger delete-btn" data-id="${escapeHTML(docSnap.id)}">Delete</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
             document.getElementById('error-stats').innerHTML = `
-                <span class="badge">Total: ${totalCount}</span>
-                <span class="badge danger">Open: ${openCount}</span>
+                <span class="badge">Total: ${escapeHTML(totalCount)}</span>
+                <span class="badge danger">Open: ${escapeHTML(openCount)}</span>
             `;
             
             document.querySelectorAll('.resolve-btn').forEach(btn => {
@@ -108,7 +108,7 @@ export async function render(container) {
             containerDiv.innerHTML = `
                 <div style="color: #ff758f; padding: 20px; background: rgba(255,117,143,0.1); border-radius: 8px; border: 1px solid rgba(255,117,143,0.2); margin-top: 20px;">
                     <h3 style="margin-top: 0;">Error Loading Error Center</h3>
-                    <p style="opacity: 0.9;">${error.message || 'Permission denied or network error'}</p>
+                    <p style="opacity: 0.9;">${escapeHTML(error.message || 'Permission denied or network error')}</p>
                     <button onclick="window.retryErrors()" style="background: #ff758f; color: #0a0e1a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">Retry Connection</button>
                 </div>
             `;

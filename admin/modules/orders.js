@@ -1,4 +1,4 @@
-import { db } from '../admin-firebase.js';
+import { db , escapeHTML} from '../admin-firebase.js';
 import { collection, query, orderBy, limit, getDocs, doc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -56,14 +56,14 @@ export async function render(container) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>${docSnap.id.substring(0, 8)}...</td>
-                <td>${data.customerName || 'N/A'}<br><small>${data.customerEmail || ''}</small></td>
+                <td>${escapeHTML(data.customerName || 'N/A')}<br><small>${escapeHTML(data.customerEmail || '')}</small></td>
                 <td>${(data.products || []).length} items</td>
-                <td>$${data.amount || 0}</td>
-                <td><span class="badge payment-${data.paymentStatus || 'pending'}">${data.paymentStatus || 'pending'}</span></td>
-                <td><span class="badge status-${data.status || 'pending'}">${data.status || 'pending'}</span></td>
+                <td>$${escapeHTML(data.amount || 0)}</td>
+                <td><span class="badge payment-${escapeHTML(data.paymentStatus || 'pending')}">${escapeHTML(data.paymentStatus || 'pending')}</span></td>
+                <td><span class="badge status-${escapeHTML(data.status || 'pending')}">${escapeHTML(data.status || 'pending')}</span></td>
                 <td>${data.date ? new Date(data.date.toDate()).toLocaleDateString() : 'N/A'}</td>
                 <td>
-                    <select class="status-select" data-id="${docSnap.id}">
+                    <select class="status-select" data-id="${escapeHTML(docSnap.id)}">
                         <option value="pending" ${data.status === 'pending' ? 'selected' : ''}>Pending</option>
                         <option value="processing" ${data.status === 'processing' ? 'selected' : ''}>Processing</option>
                         <option value="shipped" ${data.status === 'shipped' ? 'selected' : ''}>Shipped</option>

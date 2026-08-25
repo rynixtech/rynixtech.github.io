@@ -1,4 +1,4 @@
-import { db } from '../admin-firebase.js';
+import { db , escapeHTML} from '../admin-firebase.js';
 import { doc, getDoc, setDoc, serverTimestamp, collection, addDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {

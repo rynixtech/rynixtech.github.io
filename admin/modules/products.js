@@ -1,4 +1,4 @@
-import { db } from '../admin-firebase.js';
+import { db , escapeHTML} from '../admin-firebase.js';
 import { collection, query, orderBy, getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -84,12 +84,12 @@ async function loadProducts() {
 
             return `
                 <tr style="border-bottom: 1px solid rgba(183,202,255,0.05);">
-                    <td style="padding: 12px 16px; font-weight: bold;">${data.name}</td>
+                    <td style="padding: 12px 16px; font-weight: bold;">${escapeHTML(data.name)}</td>
                     <td style="padding: 12px 16px;">$${Number(data.price).toFixed(2)}</td>
-                    <td style="padding: 12px 16px;">${data.stock}</td>
+                    <td style="padding: 12px 16px;">${escapeHTML(data.stock)}</td>
                     <td style="padding: 12px 16px;">${statusBadge}</td>
                     <td style="padding: 12px 16px;">
-                        <button onclick="deleteProduct('${doc.id}')" style="background: none; border: none; color: #ff758f; cursor: pointer;" title="Delete">🗑️</button>
+                        <button onclick="deleteProduct('${escapeHTML(doc.id)}')" style="background: none; border: none; color: #ff758f; cursor: pointer;" title="Delete">🗑️</button>
                     </td>
                 </tr>
             `;

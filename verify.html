@@ -43,7 +43,7 @@
         const currentUser = auth.currentUser;
         if (currentUser && currentUser.emailVerified) {
           await ensureUserProfile(currentUser);
-          window.location.replace('index.html');
+          window.location.replace('dashboard.html');
         } else if (currentUser && currentUser.email) {
           verifyIntro.textContent = `We sent a verification link to ${currentUser.email}. Open the link in your email, then click below to verify status.`;
         }
@@ -81,7 +81,7 @@
           status.style.color = 'var(--success)';
           status.textContent = 'Email verified successfully! Redirecting…';
           setTimeout(() => {
-            window.location.replace('index.html');
+            window.location.replace('dashboard.html');
           }, 1000);
         } else {
           status.style.color = 'var(--gold)';

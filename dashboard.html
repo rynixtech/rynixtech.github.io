@@ -127,6 +127,11 @@
     import { onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
     import { getUserProfile, ensureUserProfile } from './auth.js';
 
+    function esc(str) {
+      if (str == null) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     const contentDiv = document.getElementById('mainContent');
     const headerActions = document.getElementById('headerAuthActions');
     let currentUserData = null;
@@ -174,15 +179,17 @@
       try {
         const idTokenResult = await user.getIdTokenResult(true);
         isAdmin = idTokenResult.claims.admin === true;
-      } catch (e) {}
+      } catch (e) {
+        console.error("Failed to fetch custom claims:", e);
+      }
 
       // Update Header
       const displayName = currentProfile?.displayName || user.displayName || (user.email ? user.email.split('@')[0] : 'User');
       headerActions.innerHTML = `
         <span class="button button-quiet" style="gap: 6px; cursor: default;">
-          👤 ${displayName}
+          👤 ${esc(displayName)}
         </span>
-        ${isAdmin ? '<button onclick="switchMode('admin')" class="button button-primary" style="background:#4ade80; color:#0a0e1a; cursor: pointer;">Admin Control Center</button>' : ''}
+        ${isAdmin ? '<button onclick="switchMode(\'admin\')" class="button button-primary" style="background:#4ade80; color:#0a0e1a; cursor: pointer;">Admin Control Center</button>' : ''}
         <button onclick="logout()" class="button button-quiet">Log out</button>
       `;
 
@@ -197,21 +204,21 @@
       contentDiv.innerHTML = `
         <h2>Personal Details</h2>
         <div class="profile-header">
-          <div class="profile-avatar">${initial}</div>
+          <div class="profile-avatar">${esc(initial)}</div>
           <div>
-            <h3 style="margin: 0; font-size: 1.5rem;">${email.split('@')[0]}</h3>
-            <p style="margin: 5px 0 0; color: var(--muted);">${email}</p>
+            <h3 style="margin: 0; font-size: 1.5rem;">${esc(email.split('@')[0])}</h3>
+            <p style="margin: 5px 0 0; color: var(--muted);">${esc(email)}</p>
             <span style="display:inline-block; margin-top:8px; padding: 4px 10px; background: rgba(74, 222, 128, 0.1); color: #4ade80; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">Account Active</span>
           </div>
         </div>
         <div class="grid-2">
           <div class="card-item">
             <h4>Account ID</h4>
-            <p>${currentUserData.uid}</p>
+            <p>${esc(currentUserData.uid)}</p>
           </div>
           <div class="card-item">
             <h4>Member Since</h4>
-            <p>${creationDate}</p>
+            <p>${esc(creationDate)}</p>
           </div>
           <div class="card-item">
             <h4>Role</h4>
@@ -219,7 +226,7 @@
           </div>
         </div>
         <div style="margin-top: 30px;">
-            <button class="button button-primary">Edit Profile</button>
+            <button class="button button-primary" onclick="alert('Profile editing coming soon!')">Edit Profile</button>
         </div>
       `;
     }
@@ -250,8 +257,8 @@
           const data = doc.data();
           html += `
             <div class="card-item">
-              <h4>Order #${doc.id}</h4>
-              <p>Total: $${data.total || '0.00'} | Status: ${data.status || 'Pending'}</p>
+              <h4>Order #${esc(doc.id)}</h4>
+              <p>Total: $${esc(data.total || '0.00')} | Status: ${esc(data.status || 'Pending')}</p>
             </div>
           `;
         });
@@ -266,7 +273,7 @@
       contentDiv.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid var(--line); padding-bottom: 15px;">
             <h2 style="border:none; margin:0; padding:0;">Address Book</h2>
-            <button class="button button-primary">+ Add Address</button>
+            <button class="button button-primary" onclick="alert('Address management coming soon!')">+ Add Address</button>
         </div>
         <div class="card-item" style="text-align: center; padding: 40px 20px;">
           <p>You have not saved any addresses yet.</p>
@@ -306,7 +313,7 @@
         </div>
         <div class="card-item">
           <h4>Security</h4>
-          <button class="button button-quiet" style="margin-top:10px;">Change Password</button>
+          <button class="button button-quiet" style="margin-top:10px;" onclick="alert('Use Forgot Password on the login page to change your password.')">Change Password</button>
         </div>
       `;
     }
@@ -326,10 +333,14 @@
 
       switch(hash) {
         case '#orders': renderOrders(); break;
-        case '#addresses': renderAddresses(); break;
+        case '#addresses':
+        case '#address': renderAddresses(); break;
         case '#wishlist': renderWishlist(); break;
         case '#downloads': renderDownloads(); break;
-        case '#settings': renderSettings(); break;
+        case '#settings':
+        case '#security': renderSettings(); break;
+        case '#account':
+        case '#details':
         case '#profile':
         default: renderProfile(); break;
       }

@@ -105,6 +105,11 @@
     import { db } from './firebase.js';
     import { collection, query, getDocs, where } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
+    function esc(str) {
+      if (str == null) return '';
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
     async function loadOsReleases() {
       const grid = document.getElementById('osGrid');
       try {
@@ -120,22 +125,22 @@
           const data = doc.data();
           return `
             <article class="release-card">
-              <h3>${data.name || 'Unnamed OS'}</h3>
+              <h3>${esc(data.name || 'Unnamed OS')}</h3>
               <div class="release-meta">
-                <span class="meta-tag">v${data.version || '1.0.0'}</span>
-                <span class="meta-tag">Build ${data.build || 'N/A'}</span>
-                <span class="meta-tag">${data.architecture || 'Multi-arch'}</span>
+                <span class="meta-tag">v${esc(data.version || '1.0.0')}</span>
+                <span class="meta-tag">Build ${esc(data.build || 'N/A')}</span>
+                <span class="meta-tag">${esc(data.architecture || 'Multi-arch')}</span>
               </div>
-              <p class="release-desc">${data.description || 'No description provided.'}</p>
+              <p class="release-desc">${esc(data.description || 'No description provided.')}</p>
               
               <div style="font-size: 0.8rem; color: var(--muted); margin-bottom: 15px;">
-                 <strong>Release Date:</strong> ${data.releaseDate || 'Unknown'}<br>
-                 <strong>Supported Devices:</strong> ${data.supportedDevices || 'All standard devices'}
+                 <strong>Release Date:</strong> ${esc(data.releaseDate || 'Unknown')}<br>
+                 <strong>Supported Devices:</strong> ${esc(data.supportedDevices || 'All standard devices')}
               </div>
 
               <div class="download-row">
-                <span class="download-size">Size: ${data.size ? (data.size / 1024 / 1024).toFixed(1) + ' MB' : 'Unknown'}</span>
-                <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;" onclick="window.open('${data.downloadUrl || '#'}', '_blank')">Download ISO</button>
+                <span class="download-size">Size: ${esc(data.size ? (data.size / 1024 / 1024).toFixed(1) + ' MB' : 'Unknown')}</span>
+                <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;" onclick="window.open('${esc(data.downloadUrl || '#')}', '_blank')">Download ISO</button>
               </div>
             </article>
           `;

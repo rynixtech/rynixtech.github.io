@@ -1,4 +1,4 @@
-import { db, auth, deleteB2Object } from '../admin-firebase.js';
+import { db, auth, deleteB2Object , escapeHTML} from '../admin-firebase.js';
 import { collection, query, where, orderBy, limit, getDocs, doc, deleteDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -50,12 +50,12 @@ async function loadVideos() {
                         🎥
                     </div>
                     <div style="padding: 12px;">
-                        <div style="font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.name}</div>
-                        <div style="color: #aeb8d2; font-size: 0.85em; margin-bottom: 12px;">${size}</div>
+                        <div style="font-weight: bold; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHTML(data.name)}</div>
+                        <div style="color: #aeb8d2; font-size: 0.85em; margin-bottom: 12px;">${escapeHTML(size)}</div>
                         <div style="display: flex; gap: 8px;">
-                            <button onclick="previewVideo('${data.url}')" style="flex:1; background: rgba(85,220,255,0.1); border: none; color: #55dcff; padding: 6px; border-radius: 4px; cursor: pointer;">Play</button>
-                            <button onclick="navigator.clipboard.writeText('${data.url}')" style="background: rgba(183,202,255,0.1); border: none; color: #fff; padding: 6px; border-radius: 4px; cursor: pointer;">Copy</button>
-                            <button onclick="deleteVideo('${doc.id}', '${data.fullPath}')" style="background: rgba(255,117,143,0.1); border: none; color: #ff758f; padding: 6px; border-radius: 4px; cursor: pointer;">Del</button>
+                            <button onclick="previewVideo('${escapeHTML(data.url)}')" style="flex:1; background: rgba(85,220,255,0.1); border: none; color: #55dcff; padding: 6px; border-radius: 4px; cursor: pointer;">Play</button>
+                            <button onclick="navigator.clipboard.writeText('${escapeHTML(data.url)}')" style="background: rgba(183,202,255,0.1); border: none; color: #fff; padding: 6px; border-radius: 4px; cursor: pointer;">Copy</button>
+                            <button onclick="deleteVideo('${escapeHTML(doc.id)}', '${escapeHTML(data.fullPath)}')" style="background: rgba(255,117,143,0.1); border: none; color: #ff758f; padding: 6px; border-radius: 4px; cursor: pointer;">Del</button>
                         </div>
                     </div>
                 </div>

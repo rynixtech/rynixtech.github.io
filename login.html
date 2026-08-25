@@ -51,7 +51,7 @@
 
   <script type="module">
     import { auth } from './firebase.js';
-    import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, sendEmailVerification, signOut, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+    import { setPersistence, browserLocalPersistence, signInWithEmailAndPassword, sendEmailVerification, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
     import { ensureUserProfile, googleLogin, redirectBasedOnRole } from './auth.js';
 
     const loginForm = document.getElementById('loginForm');
@@ -72,9 +72,7 @@
       if (user) {
         try {
           await user.reload();
-        } catch (err) {
-          console.warn('User reload error:', err);
-        }
+        } catch(e) { console.warn("Could not reload user:", e); }
         const currentUser = auth.currentUser;
         if (currentUser && currentUser.emailVerified) {
           await ensureUserProfile(currentUser);

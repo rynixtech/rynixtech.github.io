@@ -7,3 +7,12 @@ functions/.runtimeconfig.json
 functions/firebase-debug.log
 .firebase/
 test-firebase.html
+
+# Secrets & credentials
+*.pem
+*.key
+*service-account*.json
+.env
+.env.local
+.env.*.local
+.secret*

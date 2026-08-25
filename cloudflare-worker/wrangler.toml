@@ -14,7 +14,7 @@ compatibility_date = "2024-03-04"
 crons = [ "*/15 * * * *" ]
 
 [vars]
-ADMIN_EMAIL = "rynixtechgroup@gmail.com, rynixtechsystem@gmail.com, rynixtechteam@gmail.com, mdaftab04201@gmail.com, aniketpawar3246@gmail.com"
+# ADMIN_EMAIL = "..." # Configure via wrangler secret put ADMIN_EMAIL
 
 [ai]
 binding = "AI"

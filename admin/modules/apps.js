@@ -1,4 +1,4 @@
-import { db, deleteB2Object } from '../admin-firebase.js';
+import { db, deleteB2Object , escapeHTML} from '../admin-firebase.js';
 import { collection, query, orderBy, getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -70,20 +70,20 @@ async function loadApps() {
                     <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
                         <div style="font-size: 40px;">📱</div>
                         <div>
-                            <h3 style="margin: 0 0 4px 0; color: #f4f7ff;">${data.name}</h3>
+                            <h3 style="margin: 0 0 4px 0; color: #f4f7ff;">${escapeHTML(data.name)}</h3>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <span style="background: rgba(183,202,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: #aeb8d2;">v${data.version}</span>
-                                <span style="color: ${statusColor}; font-size: 0.8em;">● ${data.active ? 'Active' : 'Inactive'}</span>
+                                <span style="background: rgba(183,202,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: #aeb8d2;">v${escapeHTML(data.version)}</span>
+                                <span style="color: ${escapeHTML(statusColor)}; font-size: 0.8em;">● ${data.active ? 'Active' : 'Inactive'}</span>
                             </div>
                         </div>
                     </div>
                     <p style="color: #aeb8d2; font-size: 0.9em; margin-bottom: 16px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                        ${data.description || 'No description provided.'}
+                        ${escapeHTML(data.description || 'No description provided.')}
                     </p>
                     <div style="display: flex; gap: 8px;">
-                        <button onclick="editApp('${doc.id}')" style="flex: 1; background: rgba(85,220,255,0.1); border: 1px solid rgba(85,220,255,0.2); color: #55dcff; padding: 8px; border-radius: 4px; cursor: pointer;">Edit</button>
-                        <button onclick="navigator.clipboard.writeText('${data.downloadUrl}'); alert('Copied!')" style="background: rgba(183,202,255,0.1); border: none; color: #fff; padding: 8px; border-radius: 4px; cursor: pointer;" title="Copy Link">📋</button>
-                        <button onclick="deleteApp('${doc.id}', '${data.fullPath}')" style="background: rgba(255,117,143,0.1); border: 1px solid rgba(255,117,143,0.2); color: #ff758f; padding: 8px; border-radius: 4px; cursor: pointer;">Delete</button>
+                        <button onclick="editApp('${escapeHTML(doc.id)}')" style="flex: 1; background: rgba(85,220,255,0.1); border: 1px solid rgba(85,220,255,0.2); color: #55dcff; padding: 8px; border-radius: 4px; cursor: pointer;">Edit</button>
+                        <button onclick="navigator.clipboard.writeText('${escapeHTML(data.downloadUrl)}'); alert('Copied!')" style="background: rgba(183,202,255,0.1); border: none; color: #fff; padding: 8px; border-radius: 4px; cursor: pointer;" title="Copy Link">📋</button>
+                        <button onclick="deleteApp('${escapeHTML(doc.id)}', '${escapeHTML(data.fullPath)}')" style="background: rgba(255,117,143,0.1); border: 1px solid rgba(255,117,143,0.2); color: #ff758f; padding: 8px; border-radius: 4px; cursor: pointer;">Delete</button>
                     </div>
                 </div>
             `;

@@ -1,4 +1,4 @@
-import { db } from '../admin-firebase.js';
+import { db , escapeHTML} from '../admin-firebase.js';
 import { collection, query, orderBy, limit, getDocs } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -59,11 +59,11 @@ export async function render(container) {
                 const displayIcon = data.actionIcon || icon;
                 
                 div.innerHTML = `
-                    <div style="font-size: 20px; float: left; margin-right: 10px;">${displayIcon}</div>
+                    <div style="font-size: 20px; float: left; margin-right: 10px;">${escapeHTML(displayIcon)}</div>
                     <div>
-                        <strong>${actionText}</strong><br>
-                        <small style="color: #aeb8d2;">${dateStr}</small>
-                        ${data.details ? \`<br><span style="color: #f4f7ff;">${data.details}</span>\` : ''}
+                        <strong>${escapeHTML(actionText)}</strong><br>
+                        <small style="color: #aeb8d2;">${escapeHTML(dateStr)}</small>
+                        ${data.details ? \`<br><span style="color: #f4f7ff;">\</span>\` : ''}
                     </div>
                 `;
                 timeline.appendChild(div);
@@ -73,7 +73,7 @@ export async function render(container) {
             timeline.innerHTML = `
                 <div style="color: #ff758f; padding: 20px; background: rgba(255,117,143,0.1); border-radius: 8px; border: 1px solid rgba(255,117,143,0.2);">
                     <h3 style="margin-top: 0;">Error Loading Activity Log</h3>
-                    <p style="opacity: 0.9;">${error.message || 'Permission denied or network error'}</p>
+                    <p style="opacity: 0.9;">${escapeHTML(error.message || 'Permission denied or network error')}</p>
                     <button onclick="window.retryActivityLog()" style="background: #ff758f; color: #0a0e1a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">Retry Connection</button>
                 </div>
             `;

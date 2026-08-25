@@ -55,6 +55,8 @@
         await sendPasswordResetEmail(auth, email);
         message.style.color = 'var(--success)';
         message.textContent = 'Password reset email sent! Check your inbox or spam folder.';
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send reset link →';
       } catch (error) {
         message.style.color = 'var(--danger)';
         let msg = error.message;

@@ -1,4 +1,4 @@
-import { db, auth, deleteB2Object } from '../admin-firebase.js';
+import { db, auth, deleteB2Object , escapeHTML} from '../admin-firebase.js';
 import { collection, query, where, orderBy, limit, getDocs, doc, deleteDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
@@ -45,14 +45,14 @@ async function loadImages() {
             const data = doc.data();
             return `
                 <div style="position: relative; aspect-ratio: 1; background: #0f1425; border-radius: 8px; overflow: hidden; group" class="image-card">
-                    <img src="${data.url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
+                    <img src="${escapeHTML(data.url)}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(10,14,26,0.8); padding: 8px; color: #f4f7ff; font-size: 0.85em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        ${data.name}
+                        ${escapeHTML(data.name)}
                     </div>
                     <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; background: rgba(10,14,26,0.8); padding: 4px; border-radius: 4px;">
-                        <button onclick="previewImage('${data.url}')" style="background: none; border: none; color: #fff; cursor: pointer;" title="Preview">👁️</button>
-                        <button onclick="navigator.clipboard.writeText('${data.url}')" style="background: none; border: none; color: #55dcff; cursor: pointer;" title="Copy URL">📋</button>
-                        <button onclick="deleteImage('${doc.id}', '${data.fullPath}')" style="background: none; border: none; color: #ff758f; cursor: pointer;" title="Delete">🗑️</button>
+                        <button onclick="previewImage('${escapeHTML(data.url)}')" style="background: none; border: none; color: #fff; cursor: pointer;" title="Preview">👁️</button>
+                        <button onclick="navigator.clipboard.writeText('${escapeHTML(data.url)}')" style="background: none; border: none; color: #55dcff; cursor: pointer;" title="Copy URL">📋</button>
+                        <button onclick="deleteImage('${escapeHTML(doc.id)}', '${escapeHTML(data.fullPath)}')" style="background: none; border: none; color: #ff758f; cursor: pointer;" title="Delete">🗑️</button>
                     </div>
                 </div>
             `;
