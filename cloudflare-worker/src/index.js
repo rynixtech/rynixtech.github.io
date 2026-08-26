@@ -1,5 +1,5 @@
-import { DOMParser } from '@xmldom/xmldom';
-globalThis.DOMParser = DOMParser;
+import xmldom from '@xmldom/xmldom';
+globalThis.DOMParser = xmldom.DOMParser;
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutBucketCorsCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
