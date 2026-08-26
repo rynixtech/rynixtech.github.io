@@ -1,3 +1,5 @@
+import { DOMParser } from '@xmldom/xmldom';
+globalThis.DOMParser = DOMParser;
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutBucketCorsCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
