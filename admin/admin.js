@@ -6,7 +6,7 @@ const sidebarStructure = [
     items: [
       { id: 'dashboard', icon: '📊', label: 'Dashboard', route: './modules/dashboard.js' },
       { id: 'analytics', icon: '📈', label: 'Analytics', route: './modules/coming_soon.js' },
-      { id: 'notifications', icon: '🔔', label: 'Notifications', route: './modules/coming_soon.js' }
+      { id: 'notifications', icon: '🔔', label: 'Notifications', route: './modules/notifications.js' }
     ]
   },
   {
@@ -38,7 +38,7 @@ const sidebarStructure = [
       { id: 'users', icon: '👥', label: 'Users', route: './modules/users.js' },
       { id: 'admins', icon: '🛡️', label: 'Admins', route: './modules/coming_soon.js' },
       { id: 'customer_activity', icon: '📉', label: 'Customer Activity', route: './modules/coming_soon.js' },
-      { id: 'support', icon: '🎧', label: 'Support', route: './modules/coming_soon.js' }
+      { id: 'support', icon: '🎧', label: 'Support', route: './modules/support.js' }
     ]
   },
   {
@@ -256,6 +256,11 @@ function initHeader(user) {
   headerTitle = document.getElementById('header-title');
   document.getElementById('mobile-menu-btn').addEventListener('click', toggleMobileSidebar);
   document.getElementById('header-logout-btn').addEventListener('click', handleLogout);
+  
+  document.getElementById('notification-btn').addEventListener('click', () => {
+    window.location.hash = '#notifications';
+  });
+  
   document.getElementById('header-switch-btn').addEventListener('click', () => {
     sessionStorage.setItem('rynix_admin_mode', 'customer');
     window.location.href = '../dashboard.html';

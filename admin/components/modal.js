@@ -1,3 +1,5 @@
+import { escapeHTML } from '../admin-firebase.js';
+
 let currentModal = null;
 
 export function showModal({ title, content, footer, size = 'md', onClose }) {
@@ -17,6 +19,7 @@ export function showModal({ title, content, footer, size = 'md', onClose }) {
 
   const modal = document.createElement('div');
   modal.className = 'modal-content';
+  modal.setAttribute('role', 'dialog');
   modal.style.cssText = `
     width: ${modalWidth}; max-height: 90vh; background: #0f1425;
     border: 1px solid rgba(183,202,255,0.12); border-radius: 8px;
@@ -29,7 +32,7 @@ export function showModal({ title, content, footer, size = 'md', onClose }) {
 
   modal.innerHTML = `
     <div style="padding: 20px; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between; align-items: center;">
-      <h3 style="margin: 0; font-family: 'Space Grotesk', sans-serif;">${title}</h3>
+      <h3 style="margin: 0; font-family: 'Space Grotesk', sans-serif;">${escapeHTML(title)}</h3>
       <button class="modal-close" style="background: none; border: none; color: #aeb8d2; font-size: 1.5rem; cursor: pointer;">&times;</button>
     </div>
     <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1;">
@@ -102,7 +105,7 @@ export function showConfirm({ title, message, confirmText = 'Confirm', cancelTex
       <button class="btn-confirm" style="padding: 8px 16px; background: ${danger ? '#ff758f' : '#55dcff'}; border: none; color: #0a0e1a; border-radius: 4px; cursor: pointer; font-weight: bold;">${confirmText}</button>
     `;
 
-    const content = `<p>${message}</p>`;
+    const content = `<p>${escapeHTML(message)}</p>`;
 
     showModal({
       title,

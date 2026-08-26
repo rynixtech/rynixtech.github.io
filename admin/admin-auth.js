@@ -30,6 +30,19 @@ function showLoading() {
   document.getElementById('auth-loading').hidden = false;
   document.getElementById('app-shell').hidden = true;
   document.getElementById('access-denied').hidden = true;
+
+  setTimeout(() => {
+    const loadingEl = document.getElementById('auth-loading');
+    if (loadingEl && !loadingEl.hidden) {
+      loadingEl.innerHTML = `
+        <div style="text-align: center; color: #ff758f; padding: 2rem;">
+          <h3>Authentication Timeout</h3>
+          <p>Failed to connect to Firebase. Please check your network or try again.</p>
+          <a href="../login.html" class="btn" style="background:#ff758f; color:#0a0e1a; padding: 10px 20px; border-radius: 6px; text-decoration: none; display: inline-block; margin-top: 15px; font-weight: bold;">Return to Login</a>
+        </div>
+      `;
+    }
+  }, 10000);
 }
 
 function showAccessDenied() {

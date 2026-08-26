@@ -63,7 +63,8 @@ export async function render(container) {
                     <div>
                         <strong>${escapeHTML(actionText)}</strong><br>
                         <small style="color: #aeb8d2;">${escapeHTML(dateStr)}</small>
-                        ${data.details ? \`<br><span style="color: #f4f7ff;">\</span>\` : ''}
+                        ${data.details ? `<br><span style="color: #f4f7ff;">${escapeHTML(data.details)}</span>` : ''}
+                        ${data.user ? `<br><small style="color: var(--muted);">By: ${escapeHTML(data.user)}</small>` : ''}
                     </div>
                 `;
                 timeline.appendChild(div);

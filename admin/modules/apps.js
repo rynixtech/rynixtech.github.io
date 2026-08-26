@@ -1,5 +1,5 @@
 import { db, deleteB2Object , escapeHTML} from '../admin-firebase.js';
-import { collection, query, orderBy, getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
     container.innerHTML = `
@@ -54,7 +54,7 @@ export async function render(container) {
 async function loadApps() {
     const grid = document.getElementById('apps-grid');
     try {
-        const q = query(collection(db, 'apps'), orderBy('createdAt', 'desc'));
+        const q = query(collection(db, 'apps'), orderBy('createdAt', 'desc'), limit(50));
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {

@@ -1,3 +1,5 @@
+import { escapeHTML } from '../admin-firebase.js';
+
 export function createTable(container, { columns, data, onRowClick, emptyMessage = 'No data available', sortable = false, pagination }) {
   container.innerHTML = '';
   
@@ -46,6 +48,8 @@ export function createTable(container, { columns, data, onRowClick, emptyMessage
         let val = row[col.key];
         if (col.render) {
           val = col.render(val, row);
+        } else if (typeof val === 'string') {
+          val = escapeHTML(val);
         }
         return `<td style="padding: 12px 16px; color: #f4f7ff;">${val !== undefined ? val : ''}</td>`;
       }).join('');

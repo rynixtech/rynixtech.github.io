@@ -32,21 +32,8 @@ export async function render(container) {
             console.warn("Cloud function getAdminStats failed, using fallback", e);
         }
 
-        try {
-            const filesSnap = await getDocs(collection(db, 'files'));
-            let totalBytes = 0;
-            filesSnap.forEach(doc => {
-                if (doc.data().size) totalBytes += Number(doc.data().size);
-            });
-            const formatSize = (bytes) => {
-                if(bytes === 0) return '0 Bytes';
-                const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-            };
-            stats.storageUsed = formatSize(totalBytes);
-        } catch(e) {
-            console.error("Failed to calculate storage size", e);
+        if (!stats.storageUsed) {
+            stats.storageUsed = '0 MB';
         }
 
         const formatNumber = (num) => new Intl.NumberFormat().format(num);

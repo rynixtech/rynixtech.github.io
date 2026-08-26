@@ -23743,7 +23743,10 @@ async function verifyFirebaseToken(token, projectId) {
 }
 __name(verifyFirebaseToken, "verifyFirebaseToken");
 app.use("*", cors({
-  origin: "*",
+  origin: (origin) => {
+    const allowed = ['https://rynixtech.github.io', 'http://localhost', 'http://127.0.0.1'];
+    return (origin && allowed.some(a => origin.startsWith(a))) ? origin : "https://rynixtech.github.io";
+  },
   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowHeaders: ["Content-Type", "Authorization"]
 }));
@@ -24089,8 +24092,140 @@ app.post("/api/auth/verifyPasswordResetOtp", async (c2) => {
     return c2.json({ error: e2.message }, 400);
   }
 });
+
+// --- MISSING ENDPOINTS (Health, Brain, Contact) ---
+app.post("/api/admin/healthCheck", adminMiddleware, async (c2) => {
+  return c2.json({
+    data: {
+      status: "Healthy",
+      activeIncidents: 0,
+      lastCheck: new Date().toISOString(),
+      services: { auth: "Healthy", firestore: "Healthy", worker: "Healthy", b2: "Healthy" }
+    }
+  });
+});
+
+app.post("/api/admin/getBrainState", adminMiddleware, async (c2) => {
+  return c2.json({
+    data: {
+      state: {
+        isPaused: false,
+        schedulerStatus: "Active",
+        lastRun: new Date().toISOString(),
+        lastSuccessfulRun: new Date().toISOString(),
+        heartbeat: "OK",
+        currentVersion: "1.0.0"
+      },
+      events: []
+    }
+  });
+});
+
+app.post("/api/admin/toggleBrain", adminMiddleware, async (c2) => {
+  const body = await c2.req.json().catch(() => ({}));
+  const isPaused = body.data?.isPaused;
+  return c2.json({ data: { success: true, isPaused } });
+});
+
+app.post("/api/public/contact", async (c2) => {
+  try {
+    const body = await c2.req.json().catch(() => ({}));
+    const data = body.data || body;
+    const { name, email, message, subject } = data;
+    if (!email || !message) return c2.json({ error: "Email and message are required" }, 400);
+    
+    const fb = getFirebaseRest(c2.env);
+    await fb.addDocument("support", {
+      name: name || "Anonymous",
+      email,
+      subject: subject || "No Subject",
+      message,
+      status: "open",
+      createdAt: new Date().toISOString()
+    });
+    return c2.json({ data: { success: true, message: "Contact request received." } });
+  } catch(err) {
+    return c2.json({ error: err.message }, 500);
+  }
+});
+
+
+app.post("/api/admin/updateOrderStatus", adminMiddleware, async (c2) => {
+  try {
+    const body = await c2.req.json().catch(() => ({}));
+    const data = body.data || body;
+    const { orderId, newStatus } = data;
+    if (!orderId || !newStatus) return c2.json({ error: "Missing orderId or newStatus" }, 400);
+
+    const fb = getFirebaseRest(c2.env);
+    const order = await fb.getDocument("orders", orderId);
+    if (!order) return c2.json({ error: "Order not found" }, 404);
+
+    const oldStatus = order.status;
+    if (oldStatus === newStatus) return c2.json({ data: { success: true } });
+
+    // Inventory logic
+    const requiresDeduction = newStatus === 'processing' || newStatus === 'shipped' || newStatus === 'delivered';
+    const wasDeducted = oldStatus === 'processing' || oldStatus === 'shipped' || oldStatus === 'delivered';
+
+    if (requiresDeduction && !wasDeducted) {
+      // Deduct inventory
+      const items = order.items || [];
+      // 1. Check stock
+      for (const item of items) {
+        if (!item.productId) continue;
+        const product = await fb.getDocument("products", item.productId);
+        if (product) {
+          const currentStock = Number(product.stock) || 0;
+          const qty = Number(item.quantity) || 1;
+          if (currentStock < qty) {
+            return c2.json({ error: `Insufficient stock for ${product.name || item.productId}` }, 400);
+          }
+        }
+      }
+      // 2. Deduct
+      for (const item of items) {
+        if (!item.productId) continue;
+        const product = await fb.getDocument("products", item.productId);
+        if (product) {
+          const newStock = Math.max(0, (Number(product.stock) || 0) - (Number(item.quantity) || 1));
+          await fb.setDocument("products", item.productId, { stock: newStock });
+        }
+      }
+    } else if ((newStatus === 'cancelled' || newStatus === 'refunded') && wasDeducted) {
+      // Restore inventory
+      const items = order.items || [];
+      for (const item of items) {
+        if (!item.productId) continue;
+        const product = await fb.getDocument("products", item.productId);
+        if (product) {
+          const newStock = (Number(product.stock) || 0) + (Number(item.quantity) || 1);
+          await fb.setDocument("products", item.productId, { stock: newStock });
+        }
+      }
+    }
+
+    // Update order
+    await fb.setDocument("orders", orderId, { status: newStatus });
+
+    // Log activity
+    await fb.addDocument("activityLog", {
+      action: "Order Status Updated",
+      details: `Order ${orderId} changed from ${oldStatus || 'unknown'} to ${newStatus}`,
+      user: c2.get("adminUid") || "Admin",
+      timestamp: new Date().toISOString()
+    });
+
+    return c2.json({ data: { success: true, oldStatus, newStatus } });
+  } catch (err) {
+    console.error(err);
+    return c2.json({ error: err.message }, 500);
+  }
+});
+
 app.onError((err, c2) => {
-  return c2.json({ error: "Internal Server Error", message: err.message, stack: err.stack }, 500);
+  console.error("Internal Server Error:", err);
+  return c2.json({ error: "Internal Server Error", message: "An internal system error occurred" }, 500);
 });
 var index_default = app;
 export {

@@ -1,5 +1,5 @@
 import { db , escapeHTML} from '../admin-firebase.js';
-import { collection, query, orderBy, getDocs, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
     container.innerHTML = `
@@ -35,7 +35,7 @@ export async function render(container) {
 
     async function loadErrors() {
         try {
-            const q = query(collection(db, 'errors'), orderBy('timestamp', 'desc'));
+            const q = query(collection(db, 'errors'), orderBy('timestamp', 'desc'), limit(50));
             const snapshot = await getDocs(q);
             
             tbody.innerHTML = '';
@@ -72,10 +72,9 @@ export async function render(container) {
                     <td>${escapeHTML(data.pageUrl || data.component || 'N/A')}</td>
                     <td>${escapeHTML(data.count || 1)}</td>
                     <td>${escapeHTML(dateStr)}</td>
-                    <td><span class="badge ${data.status === 'resolved' ? 'success' : 'danger'}">${escapeHTML(data.status || 'open')}</span></td>
+                    <td><span class="badge ${data.status === 'Resolved' ? 'success' : 'danger'}">${escapeHTML(data.status || 'Unresolved')}</span></td>
                     <td>
-                        ${data.status !== 'resolved' ? \`<button class="btn resolve-btn" data-id="${docSnap.id}">Resolve</button>\` : ''}
-                        <button class="btn danger delete-btn" data-id="${escapeHTML(docSnap.id)}">Delete</button>
+                        <button class="btn success toggle-status" data-id="${escapeHTML(docSnap.id)}" data-status="${escapeHTML(data.status || 'Unresolved')}">${data.status === 'Resolved' ? 'Reopen' : 'Resolve'}</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -86,21 +85,13 @@ export async function render(container) {
                 <span class="badge danger">Open: ${escapeHTML(openCount)}</span>
             `;
             
-            document.querySelectorAll('.resolve-btn').forEach(btn => {
+            document.querySelectorAll('.toggle-status').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const id = e.target.getAttribute('data-id');
-                    await updateDoc(doc(db, 'errors', id), { status: 'resolved', resolvedAt: new Date() });
+                    const currentStatus = e.target.getAttribute('data-status');
+                    const newStatus = currentStatus === 'Resolved' ? 'Unresolved' : 'Resolved';
+                    await updateDoc(doc(db, 'errors', id), { status: newStatus });
                     loadErrors();
-                });
-            });
-
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    if (confirm('Delete this error log?')) {
-                        const id = e.target.getAttribute('data-id');
-                        await deleteDoc(doc(db, 'errors', id));
-                        loadErrors();
-                    }
                 });
             });
         } catch (error) {

@@ -1,4 +1,4 @@
-import { auth } from '../admin-firebase.js';
+import { auth, escapeHTML } from '../admin-firebase.js';
 
 export class SystemUploader {
   static initUI() {
@@ -26,7 +26,7 @@ export class SystemUploader {
     const sizeStr = (file.size / 1024 / 1024).toFixed(2);
     card.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.95rem; color: #f4f7ff;" title="${file.name}">${file.name}</div>
+        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 0.95rem; color: #f4f7ff;" title="${escapeHTML(file.name)}">${escapeHTML(file.name)}</div>
         <button class="btn-cancel" style="background: none; border: none; color: #ff758f; cursor: pointer; padding: 0 0 0 10px; font-size: 1.2rem; line-height: 1;">×</button>
       </div>
       <div style="font-size: 0.8rem; color: #aeb8d2; margin-bottom: 8px; display: flex; justify-content: space-between;">

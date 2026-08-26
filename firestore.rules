@@ -5,13 +5,7 @@ service cloud.firestore {
     function isAdmin() {
       return request.auth != null && (
         request.auth.token.admin == true ||
-        request.auth.token.email in [
-          'rynixtechsystem@gmail.com',
-          'rynixtechteam@gmail.com',
-          'mdaftab04201@gmail.com',
-          'aniketpawar3246@gmail.com'
-        ] ||
-        request.auth.token.email.matches('.*gserviceaccount[.]com')
+        request.auth.token.email.matches('firebase-adminsdk-.*@rynixtech-e0281[.]iam[.]gserviceaccount[.]com')
       );
     }
 
@@ -28,7 +22,7 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAdmin() && (!request.resource.data.keys().hasAll(['stock']) || request.resource.data.stock >= 0);
     }
 
     match /orders/{orderId} {
@@ -80,10 +74,24 @@ service cloud.firestore {
 
     match /errors/{errorId} {
       allow create: if isAdmin();
-      allow read, update, delete: if isAdmin();
+      allow read, update: if isAdmin();
+      allow delete: if false;
     }
 
     match /settings/{settingId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /support/{supportId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /admin_notifications/{notifId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /system_alerts/{alertId} {
       allow read, write: if isAdmin();
     }
 

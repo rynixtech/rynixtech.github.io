@@ -1,3 +1,5 @@
+import { escapeHTML } from '../admin-firebase.js';
+
 export function renderHeader(container, { user }) {
   const hash = window.location.hash.slice(1) || 'dashboard';
   const title = hash.charAt(0).toUpperCase() + hash.slice(1);
@@ -5,7 +7,7 @@ export function renderHeader(container, { user }) {
   container.innerHTML = `
     <div class="header-left" style="display: flex; align-items: center; gap: 15px;">
       <button id="mobile-menu-toggle" style="background: none; border: none; color: #f4f7ff; font-size: 1.5rem; cursor: pointer; display: none;">☰</button>
-      <h1 id="header-title" style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem;">${title}</h1>
+      <h1 id="header-title" style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem;">${escapeHTML(title)}</h1>
     </div>
     <div class="header-center" style="flex: 1; max-width: 400px; margin: 0 20px;">
       <div style="position: relative;">
@@ -19,7 +21,7 @@ export function renderHeader(container, { user }) {
         <span style="position: absolute; top: -5px; right: -5px; background: #ff758f; color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px;">3</span>
       </div>
       <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="color: #aeb8d2; font-size: 0.9rem;">${user?.displayName || user?.email || 'Admin'}</span>
+        <span style="color: #aeb8d2; font-size: 0.9rem;">${escapeHTML(user?.displayName || user?.email || 'Admin')}</span>
         <button id="header-logout" style="padding: 6px 12px; background: rgba(183,202,255,0.12); border: none; color: #ff758f; border-radius: 4px; cursor: pointer;">Logout</button>
       </div>
     </div>

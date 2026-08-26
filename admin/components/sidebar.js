@@ -1,3 +1,5 @@
+import { escapeHTML } from '../admin-firebase.js';
+
 export function renderSidebar(container, { user, activeSection }) {
   const sections = [
     { id: 'dashboard', icon: '📊', label: 'Dashboard' },
@@ -35,7 +37,7 @@ export function renderSidebar(container, { user, activeSection }) {
       </ul>
     </nav>
     <div class="sidebar-footer" style="padding: 20px; border-top: 1px solid rgba(183,202,255,0.12);">
-      <div style="color: #aeb8d2; font-size: 0.9rem; margin-bottom: 10px; word-break: break-all;">${user?.email || 'Admin'}</div>
+      <div style="color: #aeb8d2; font-size: 0.9rem; margin-bottom: 10px; word-break: break-all;">${escapeHTML(user?.email || 'Admin')}</div>
       <button id="sidebar-logout" style="width: 100%; padding: 8px; background: rgba(183,202,255,0.12); border: none; color: #ff758f; border-radius: 4px; cursor: pointer;">Logout</button>
     </div>
   `;

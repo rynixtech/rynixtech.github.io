@@ -1,3 +1,5 @@
+import { escapeHTML } from '../admin-firebase.js';
+
 export function showToast({ message, type = 'info', duration = 4000 }) {
   let container = document.getElementById('toast-container');
   if (!container) {
@@ -26,6 +28,7 @@ export function showToast({ message, type = 'info', duration = 4000 }) {
   const theme = colors[type] || colors.info;
 
   const toast = document.createElement('div');
+  toast.setAttribute('role', 'alert');
   toast.style.cssText = `
     background: #0f1425;
     border-left: 4px solid ${theme.border};
@@ -43,7 +46,7 @@ export function showToast({ message, type = 'info', duration = 4000 }) {
   `;
 
   toast.innerHTML = `
-    <span style="margin-right: 15px;">${message}</span>
+    <span style="margin-right: 15px;">${escapeHTML(message)}</span>
     <button style="background: none; border: none; color: #aeb8d2; cursor: pointer; font-size: 1.2rem; padding: 0;">&times;</button>
   `;
 
