@@ -49,7 +49,7 @@ async function loadItems() {
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {
-            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #aeb8d2;">No data found</div>';
+            grid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px;"><span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📁</span><h3>Ready for Data</h3><p style="color: #aeb8d2;">Click "+ Add New" to get started.</p></div>';
             return;
         }
 

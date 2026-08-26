@@ -27,6 +27,10 @@ export async function render(container) {
                             <label style="display:block; margin-bottom:4px; color:#aeb8d2;">Details</label>
                             <textarea id="media_audio-details" rows="3" style="width: 100%; padding: 8px; background: #0a0e1a; border: 1px solid rgba(183,202,255,0.12); color: white; border-radius: 4px;"></textarea>
                         </div>
+                        <div>
+                            <label style="display:block; margin-bottom:4px; color:#aeb8d2;">Upload File</label>
+                            <input type="file" id="media_audio-file" accept="audio/*" style="width: 100%; padding: 8px; background: #0a0e1a; border: 1px solid rgba(183,202,255,0.12); color: white; border-radius: 4px;">
+                        </div>
                         <button type="submit" style="background: #55dcff; color: #0a0e1a; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 8px;">Save</button>
                     </form>
                 </div>
@@ -49,7 +53,7 @@ async function loadItems() {
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {
-            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #aeb8d2;">No data found</div>';
+            grid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px;"><span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📁</span><h3>Ready for Data</h3><p style="color: #aeb8d2;">Click "+ Add New" to get started.</p></div>';
             return;
         }
 
@@ -59,6 +63,7 @@ async function loadItems() {
                 <div style="background: #0f1425; border-radius: 8px; border: 1px solid rgba(183,202,255,0.12); padding: 20px;">
                     <h3 style="margin: 0 0 10px 0; color: #f4f7ff;">${escapeHTML(data.title || 'Untitled')}</h3>
                     <p style="color: #aeb8d2; font-size: 0.9em; margin-bottom: 16px;">${escapeHTML(data.details || '')}</p>
+                    ${data.fileUrl ? `<a href="${escapeHTML(data.fileUrl)}" target="_blank" style="display: block; margin-bottom: 16px; color: #55dcff; text-decoration: none;">View Attached File ↗</a>` : ''}
                     <div style="display: flex; gap: 8px;">
                         <button onclick="edit_media_audio('${escapeHTML(doc.id)}')" style="flex: 1; background: rgba(85,220,255,0.1); border: 1px solid rgba(85,220,255,0.2); color: #55dcff; padding: 8px; border-radius: 4px; cursor: pointer;">Edit</button>
                         <button onclick="delete_media_audio('${escapeHTML(doc.id)}')" style="background: rgba(255,117,143,0.1); border: 1px solid rgba(255,117,143,0.2); color: #ff758f; padding: 8px; border-radius: 4px; cursor: pointer;">Delete</button>
@@ -75,6 +80,11 @@ async function loadItems() {
 window.delete_media_audio = async (docId) => {
     if(!confirm('Delete this entry?')) return;
     try {
+        const docSnap = await getDoc(doc(db, 'audio_media', docId));
+        if (docSnap.exists() && docSnap.data().fullPath) {
+            const { deleteB2Object } = await import('../admin-firebase.js');
+            await deleteB2Object(docSnap.data().fullPath);
+        }
         await deleteDoc(doc(db, 'audio_media', docId));
         loadItems();
     } catch(e) {
@@ -105,6 +115,7 @@ async function saveItem() {
     const docId = document.getElementById('media_audio-doc-id').value;
     const title = document.getElementById('media_audio-title').value;
     const details = document.getElementById('media_audio-details').value;
+    const fileInput = document.getElementById('media_audio-file');
 
     const data = {
         title,
@@ -113,11 +124,29 @@ async function saveItem() {
     };
 
     try {
-        if(docId) {
-            await updateDoc(doc(db, 'audio_media', docId), data);
+        if (fileInput && fileInput.files.length > 0) {
+            const file = fileInput.files[0];
+            const { SystemUploader } = await import('../components/uploader.js');
+            await SystemUploader.upload(file, 'audio', {
+                maxSizeMB: 500,
+                onSaveMetadata: async (result) => {
+                    data.fileUrl = result.url;
+                    data.fullPath = result.fullPath;
+                    if(docId) {
+                        await updateDoc(doc(db, 'audio_media', docId), data);
+                    } else {
+                        data.createdAt = serverTimestamp();
+                        await addDoc(collection(db, 'audio_media'), data);
+                    }
+                }
+            });
         } else {
-            data.createdAt = serverTimestamp();
-            await addDoc(collection(db, 'audio_media'), data);
+            if(docId) {
+                await updateDoc(doc(db, 'audio_media', docId), data);
+            } else {
+                data.createdAt = serverTimestamp();
+                await addDoc(collection(db, 'audio_media'), data);
+            }
         }
         
         document.getElementById('media_audio-modal').style.display = 'none';
