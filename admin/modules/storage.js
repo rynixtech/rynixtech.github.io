@@ -1,131 +1,96 @@
-import { db, escapeHTML } from '../admin-firebase.js';
-import { collection, query, orderBy, limit, getDocs, getDoc, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+import { auth } from '../admin-firebase.js';
 
 export async function render(container) {
     container.innerHTML = `
         <div class="module-container" style="padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Storage Management</h2>
-                <button onclick="document.getElementById('storage-modal').style.display='block'" style="background: #55dcff; color: #0a0e1a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add New</button>
+                <h2>Live Storage Metrics</h2>
+                <button onclick="loadStorageStats()" id="refresh-storage-btn" style="background: #55dcff; color: #0a0e1a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">↻ Refresh</button>
             </div>
 
-            <div id="storage-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-                <div style="grid-column: 1 / -1; text-align: center; color: #aeb8d2;">Loading...</div>
-            </div>
-
-            <div id="storage-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10,14,26,0.9); z-index: 1000; padding: 20px; overflow-y: auto;">
-                <div style="background: #0f1425; border: 1px solid rgba(183,202,255,0.12); padding: 24px; border-radius: 8px; max-width: 500px; margin: 40px auto; position: relative;">
-                    <button onclick="document.getElementById('storage-modal').style.display='none'" style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: #aeb8d2; font-size: 20px; cursor: pointer;">×</button>
-                    <h3>Add/Edit Entry</h3>
-                    <form id="storage-form" style="display: flex; flex-direction: column; gap: 16px;">
-                        <input type="hidden" id="storage-doc-id">
-                        <div>
-                            <label style="display:block; margin-bottom:4px; color:#aeb8d2;">Name / Title</label>
-                            <input type="text" id="storage-title" required style="width: 100%; padding: 8px; background: #0a0e1a; border: 1px solid rgba(183,202,255,0.12); color: white; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display:block; margin-bottom:4px; color:#aeb8d2;">Details</label>
-                            <textarea id="storage-details" rows="3" style="width: 100%; padding: 8px; background: #0a0e1a; border: 1px solid rgba(183,202,255,0.12); color: white; border-radius: 4px;"></textarea>
-                        </div>
-                        <button type="submit" style="background: #55dcff; color: #0a0e1a; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 8px;">Save</button>
-                    </form>
+            <div id="storage-container">
+                <div style="background: #0f1425; border: 1px solid rgba(183,202,255,0.12); padding: 40px; border-radius: 8px; text-align: center;">
+                    <div style="color: #aeb8d2; font-size: 1.2em; margin-bottom: 16px;">Connecting to Backblaze B2...</div>
+                    <div class="spinner" style="margin: 0 auto; width: 40px; height: 40px; border: 4px solid rgba(85,220,255,0.3); border-radius: 50%; border-top-color: #55dcff; animation: spin 1s ease-in-out infinite;"></div>
                 </div>
             </div>
+            
+            <style>
+            @keyframes spin { to { transform: rotate(360deg); } }
+            </style>
         </div>
     `;
     
-    document.getElementById('storage-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        await saveItem();
-    });
-
-    loadItems();
-}
-
-async function loadItems() {
-    const grid = document.getElementById('storage-grid');
-    try {
-        const q = query(collection(db, 'storage_stats'), orderBy('createdAt', 'desc'), limit(50));
-        const snapshot = await getDocs(q);
-        
-        if (snapshot.empty) {
-            grid.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 40px;"><span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📁</span><h3>Ready for Data</h3><p style="color: #aeb8d2;">Click "+ Add New" to get started.</p></div>';
-            return;
+    window.loadStorageStats = async () => {
+        const btn = document.getElementById('refresh-storage-btn');
+        if (btn) btn.disabled = true;
+        const containerNode = document.getElementById('storage-container');
+        if (containerNode && containerNode.innerHTML.indexOf('spinner') === -1) {
+             containerNode.innerHTML = '<div style="text-align: center; color: #aeb8d2; padding: 40px;">Refreshing live metrics...</div>';
         }
-
-        grid.innerHTML = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return `
-                <div style="background: #0f1425; border-radius: 8px; border: 1px solid rgba(183,202,255,0.12); padding: 20px;">
-                    <h3 style="margin: 0 0 10px 0; color: #f4f7ff;">${escapeHTML(data.title || 'Untitled')}</h3>
-                    <p style="color: #aeb8d2; font-size: 0.9em; margin-bottom: 16px;">${escapeHTML(data.details || '')}</p>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="edit_storage('${escapeHTML(doc.id)}')" style="flex: 1; background: rgba(85,220,255,0.1); border: 1px solid rgba(85,220,255,0.2); color: #55dcff; padding: 8px; border-radius: 4px; cursor: pointer;">Edit</button>
-                        <button onclick="delete_storage('${escapeHTML(doc.id)}')" style="background: rgba(255,117,143,0.1); border: 1px solid rgba(255,117,143,0.2); color: #ff758f; padding: 8px; border-radius: 4px; cursor: pointer;">Delete</button>
+        
+        try {
+            const user = auth.currentUser;
+            if (!user) throw new Error("Not authenticated");
+            const token = await user.getIdToken();
+            
+            const res = await fetch('https://rynixtech-control-center-worker.rynixtech.workers.dev/api/admin/storage-stats', {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || `HTTP ${res.status}`);
+            }
+            
+            const data = await res.json();
+            
+            // Format bytes
+            const formatBytes = (bytes) => {
+                if(bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            };
+            
+            if (containerNode) {
+                containerNode.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                        <div style="background: #0f1425; border: 1px solid rgba(183,202,255,0.12); padding: 30px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 3rem; margin-bottom: 10px;">💾</div>
+                            <div style="color: #aeb8d2; font-size: 1.1em; margin-bottom: 8px;">Total Storage Used</div>
+                            <div style="color: #64dfac; font-size: 2.5em; font-weight: bold;">${formatBytes(data.totalSize)}</div>
+                        </div>
+                        <div style="background: #0f1425; border: 1px solid rgba(183,202,255,0.12); padding: 30px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 3rem; margin-bottom: 10px;">📦</div>
+                            <div style="color: #aeb8d2; font-size: 1.1em; margin-bottom: 8px;">Total Objects / Files</div>
+                            <div style="color: #f4f7ff; font-size: 2.5em; font-weight: bold;">${data.totalObjects.toLocaleString()}</div>
+                        </div>
                     </div>
-                </div>
-            `;
-        }).join('');
-    } catch(e) {
-        console.error(e);
-        grid.innerHTML = '<div style="color: #ff758f;">Error loading data (implement firestore rules)</div>';
-    }
-}
-
-window.delete_storage = async (docId) => {
-    if(!confirm('Delete this entry?')) return;
-    try {
-        await deleteDoc(doc(db, 'storage_stats', docId));
-        loadItems();
-    } catch(e) {
-        alert('Error deleting: ' + e.message);
-    }
-}
-
-window.edit_storage = async (docId) => {
-    try {
-        const docRef = doc(db, 'storage_stats', docId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            document.getElementById('storage-doc-id').value = docId;
-            document.getElementById('storage-title').value = data.title || '';
-            document.getElementById('storage-details').value = data.details || '';
-            document.getElementById('storage-modal').style.display = 'block';
-        } else {
-            alert('Not found');
+                    
+                    <div style="margin-top: 20px; background: rgba(85,220,255,0.1); border: 1px solid rgba(85,220,255,0.2); padding: 15px; border-radius: 8px; color: #aeb8d2; font-size: 0.9em; text-align: center;">
+                        This data is fetched live from your Backblaze B2 bucket via the Cloudflare Worker.
+                    </div>
+                `;
+            }
+        } catch (err) {
+            console.error(err);
+            if (containerNode) {
+                containerNode.innerHTML = `
+                    <div style="background: rgba(255,117,143,0.1); border: 1px solid rgba(255,117,143,0.2); padding: 30px; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">⚠️</div>
+                        <h3 style="color: #ff758f; margin-top: 0;">Error Loading Storage Stats</h3>
+                        <p style="color: #aeb8d2;">${err.message}</p>
+                    </div>
+                `;
+            }
+        } finally {
+            if (btn) btn.disabled = false;
         }
-    } catch(e) {
-        console.error(e);
-        alert('Error loading data');
-    }
-}
-
-async function saveItem() {
-    const docId = document.getElementById('storage-doc-id').value;
-    const title = document.getElementById('storage-title').value;
-    const details = document.getElementById('storage-details').value;
-
-    const data = {
-        title,
-        details,
-        updatedAt: serverTimestamp()
     };
-
-    try {
-        if(docId) {
-            await updateDoc(doc(db, 'storage_stats', docId), data);
-        } else {
-            data.createdAt = serverTimestamp();
-            await addDoc(collection(db, 'storage_stats'), data);
-        }
-        
-        document.getElementById('storage-modal').style.display = 'none';
-        document.getElementById('storage-form').reset();
-        document.getElementById('storage-doc-id').value = '';
-        loadItems();
-    } catch(e) {
-        console.error(e);
-        alert('Error saving: ' + e.message);
-    }
+    
+    // Auto load
+    setTimeout(window.loadStorageStats, 100);
 }

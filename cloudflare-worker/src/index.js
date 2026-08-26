@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutBucketCorsCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutBucketCorsCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as jose from 'jose';
 import { FirebaseRest } from './firebase-rest';
@@ -112,6 +112,40 @@ app.get('/api/admin/test-storage', async (c) => {
     return c.json({ ok: true, message: 'B2 connection successful!' });
   } catch (err) {
     console.error(err.stack); // log internally
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.get('/api/admin/storage-stats', async (c) => {
+  try {
+    const s3 = getS3Client(c.env);
+    let isTruncated = true;
+    let continuationToken = undefined;
+    let totalSize = 0;
+    let totalObjects = 0;
+    
+    // NOTE: This could be slow for very large buckets, but works for admin live view
+    while (isTruncated) {
+      const command = new ListObjectsV2Command({
+        Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
+        ContinuationToken: continuationToken
+      });
+      const response = await s3.send(command);
+      
+      if (response.Contents) {
+        for (const item of response.Contents) {
+          totalSize += (item.Size || 0);
+          totalObjects++;
+        }
+      }
+      
+      isTruncated = response.IsTruncated;
+      continuationToken = response.NextContinuationToken;
+    }
+    
+    return c.json({ ok: true, totalSize, totalObjects });
+  } catch (err) {
+    console.error('[STORAGE STATS ERROR]', err);
     return c.json({ ok: false, error: err.message }, 500);
   }
 });
