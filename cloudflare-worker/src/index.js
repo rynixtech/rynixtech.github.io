@@ -4,8 +4,6 @@ globalThis.Node = xmldom.Node;
 globalThis.XMLSerializer = xmldom.XMLSerializer;
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutBucketCorsCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import * as jose from 'jose';
 import { FirebaseRest } from './firebase-rest';
 
@@ -88,63 +86,36 @@ app.use('/api/admin/*', adminMiddleware);
 app.use('/api/storage/*', adminMiddleware);
 // Note: /api/auth/* routes like login/signup do NOT use middleware automatically unless specified.
 
-// --- B2 Storage (Admin) ---
+// --- Cloudflare R2 Storage (Admin) ---
 
-function getS3Client(env) {
-  return new S3Client({
-    region: env.B2_REGION,
-    endpoint: `https://s3.${env.B2_REGION}.backblazeb2.com`,
-    credentials: {
-      accessKeyId: env.B2_APPLICATION_KEY_ID,
-      secretAccessKey: env.B2_APPLICATION_KEY,
+function getR2Binding(env) {
+    const possibleBindings = ['R2', 'BUCKET', 'STORAGE', 'RYNIX_STORAGE', 'R2_BUCKET', 'RYNIXTECH_STORAGE', 'BUCKET_NAME'];
+    for (const b of possibleBindings) {
+        if (env[b] && typeof env[b].list === 'function') {
+            return env[b];
+        }
     }
-  });
+    throw new Error("R2 binding not found. Please ensure the Cloudflare R2 bucket is bound to the worker. (DOMParser error ROOT CAUSE fixed)");
 }
 
-app.get('/api/admin/test-storage', async (c) => {
+app.get('/api/admin/storage/stats', async (c) => {
   try {
-    const s3 = getS3Client(c.env);
-    // Try to put a tiny test object
-    const testKey = `public/test/connection-test-${Date.now()}.txt`;
-    const command = new PutObjectCommand({
-      Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
-      Key: testKey,
-      Body: 'test',
-      ContentType: 'text/plain'
-    });
-    await s3.send(command);
-    return c.json({ ok: true, message: 'B2 connection successful!' });
-  } catch (err) {
-    console.error(err.stack); // log internally
-    return c.json({ ok: false, error: err.message }, 500);
-  }
-});
-
-app.get('/api/admin/storage-stats', async (c) => {
-  try {
-    const s3 = getS3Client(c.env);
-    let isTruncated = true;
-    let continuationToken = undefined;
+    const r2 = getR2Binding(c.env);
     let totalSize = 0;
     let totalObjects = 0;
+    let cursor;
+    let isTruncated = true;
     
-    // NOTE: This could be slow for very large buckets, but works for admin live view
     while (isTruncated) {
-      const command = new ListObjectsV2Command({
-        Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
-        ContinuationToken: continuationToken
-      });
-      const response = await s3.send(command);
-      
-      if (response.Contents) {
-        for (const item of response.Contents) {
-          totalSize += (item.Size || 0);
-          totalObjects++;
-        }
+      const list = await r2.list({ limit: 1000, cursor });
+      for (const obj of list.objects) {
+        totalSize += obj.size;
+        totalObjects++;
       }
+      isTruncated = list.truncated;
+      cursor = list.cursor;
       
-      isTruncated = response.IsTruncated;
-      continuationToken = response.NextContinuationToken;
+      if (totalObjects >= 50000) break;
     }
     
     return c.json({ ok: true, totalSize, totalObjects });
@@ -154,131 +125,233 @@ app.get('/api/admin/storage-stats', async (c) => {
   }
 });
 
-app.post('/api/storage/upload', async (c) => {
+app.get('/api/admin/storage/list', async (c) => {
   try {
-    const { filename, contentType, category } = await c.req.json();
-    if (!filename || !contentType) return c.json({ error: 'Missing filename or contentType' }, 400);
-    const allowedCategories = ['images', 'videos', 'apks', 'documents', 'product-images'];
-    if (!allowedCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400);
-
-    const safeFilename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const fileId = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-    const prefix = category === 'documents' ? 'private/documents' : `public/${category}`;
-    const objectKey = `${prefix}/${fileId}_${safeFilename}`;
-
-    const s3 = getS3Client(c.env);
-    const command = new PutObjectCommand({
-      Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
-      Key: objectKey,
-      ContentType: contentType,
-    });
-
-    const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
-    return c.json({ 
-      ok: true, 
-      message: 'Upload authorized', 
-      url, 
-      objectKey 
-    });
-  } catch (err) {
-    console.error('[UPLOAD ERROR]', err.name, err.message, err.stack);
-    return c.json({ 
-      ok: false, 
-      code: 'UPLOAD_FAILED', 
-      message: 'Failed to generate upload URL: ' + err.message 
-    }, 500);
-  }
-});
-
-app.post('/api/storage/delete', async (c) => {
-  const { objectKey } = await c.req.json();
-  if (!objectKey || objectKey.includes('..')) return c.json({ error: 'Invalid object key' }, 400);
-
-  const s3 = getS3Client(c.env);
-  const command = new DeleteObjectCommand({
-    Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
-    Key: objectKey,
-  });
-
-  try {
-    await s3.send(command);
-    return c.json({ success: true });
-  } catch (err) {
-    return c.json({ error: 'Failed to delete object' }, 500);
-  }
-});
-
-app.get('/setup-b2-cors', async (c) => {
-  const s3 = getS3Client(c.env);
-  const command = new PutBucketCorsCommand({
-    Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
-    CORSConfiguration: {
-      CORSRules: [
-        {
-          AllowedHeaders: ["*"],
-          AllowedMethods: ["GET", "PUT", "POST", "HEAD"],
-          AllowedOrigins: ["*"],
-          ExposeHeaders: ["ETag"],
-          MaxAgeSeconds: 3600
-        }
-      ]
+    const r2 = getR2Binding(c.env);
+    const prefix = c.req.query('prefix') || '';
+    const cursor = c.req.query('cursor');
+    const limit = parseInt(c.req.query('limit')) || 100;
+    const search = c.req.query('search') || '';
+    
+    let listOptions = { limit, prefix };
+    if (cursor) listOptions.cursor = cursor;
+    if (!search) listOptions.delimiter = '/'; 
+    
+    const list = await r2.list(listOptions);
+    
+    let objects = list.objects.map(o => ({
+      key: o.key,
+      size: o.size,
+      uploaded: o.uploaded,
+      etag: o.etag,
+      type: o.httpMetadata?.contentType || 'application/octet-stream'
+    }));
+    
+    if (search) {
+      objects = objects.filter(o => o.key.toLowerCase().includes(search.toLowerCase()));
     }
-  });
-  try {
-    await s3.send(command);
-    return c.json({ success: true, message: "CORS rules applied to B2 bucket." });
+    
+    return c.json({
+      ok: true,
+      objects,
+      folders: list.delimitedPrefixes || [],
+      nextCursor: list.truncated ? list.cursor : null
+    });
   } catch (err) {
-    return c.json({ error: err.message, stack: err.stack }, 500);
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.post('/api/admin/storage/upload', async (c) => {
+  try {
+    const r2 = getR2Binding(c.env);
+    const formData = await c.req.parseBody();
+    const file = formData['file'];
+    let path = formData['path'] || '';
+    
+    if (!file || !file.name) {
+      return c.json({ ok: false, error: 'No file provided' }, 400);
+    }
+    
+    const key = path ? (path.endsWith('/') ? path + file.name : path + '/' + file.name) : file.name;
+    const arrayBuffer = await file.arrayBuffer();
+    
+    await r2.put(key, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type || 'application/octet-stream'
+      }
+    });
+    
+    return c.json({ ok: true, key });
+  } catch (err) {
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.post('/api/admin/storage/delete', async (c) => {
+  try {
+    const r2 = getR2Binding(c.env);
+    const body = await c.req.json();
+    const path = body.path;
+    if (!path) return c.json({ ok: false, error: 'No path provided' }, 400);
+    
+    await r2.delete(path);
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.post('/api/admin/storage/bulk-delete', async (c) => {
+  try {
+    const r2 = getR2Binding(c.env);
+    const body = await c.req.json();
+    const paths = body.paths;
+    if (!Array.isArray(paths)) return c.json({ ok: false, error: 'Invalid paths array' }, 400);
+    
+    for (let i = 0; i < paths.length; i += 1000) {
+      await r2.delete(paths.slice(i, i + 1000));
+    }
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.post('/api/admin/storage/copy', async (c) => {
+  try {
+    const r2 = getR2Binding(c.env);
+    const body = await c.req.json();
+    const { oldPath, newPath } = body;
+    if (!oldPath || !newPath) return c.json({ ok: false, error: 'Missing paths' }, 400);
+    
+    const obj = await r2.get(oldPath);
+    if (!obj) return c.json({ ok: false, error: 'Source object not found' }, 404);
+    
+    await r2.put(newPath, obj.body, { httpMetadata: obj.httpMetadata });
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.post('/api/admin/storage/move', async (c) => {
+  try {
+    const r2 = getR2Binding(c.env);
+    const body = await c.req.json();
+    const { oldPath, newPath } = body;
+    if (!oldPath || !newPath) return c.json({ ok: false, error: 'Missing paths' }, 400);
+    
+    const obj = await r2.get(oldPath);
+    if (!obj) return c.json({ ok: false, error: 'Source object not found' }, 404);
+    
+    await r2.put(newPath, obj.body, { httpMetadata: obj.httpMetadata });
+    await r2.delete(oldPath);
+    
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.post('/api/admin/storage/rename', async (c) => {
+  try {
+    const r2 = getR2Binding(c.env);
+    const body = await c.req.json();
+    const { oldPath, newPath } = body;
+    if (!oldPath || !newPath) return c.json({ ok: false, error: 'Missing paths' }, 400);
+    
+    const obj = await r2.get(oldPath);
+    if (!obj) return c.json({ ok: false, error: 'Source object not found' }, 404);
+    
+    await r2.put(newPath, obj.body, { httpMetadata: obj.httpMetadata });
+    await r2.delete(oldPath);
+    
+    return c.json({ ok: true });
+  } catch (err) {
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+app.get('/api/admin/storage/download', async (c) => {
+  try {
+    const r2 = getR2Binding(c.env);
+    const path = c.req.query('path');
+    if (!path) return c.json({ ok: false, error: 'No path provided' }, 400);
+    
+    const obj = await r2.get(path);
+    if (!obj) return new Response('Not Found', { status: 404 });
+    
+    const headers = new Headers();
+    obj.writeHttpMetadata(headers);
+    headers.set('etag', obj.etag);
+    headers.set('Content-Disposition', `attachment; filename="${path.split('/').pop()}"`);
+    
+    return new Response(obj.body, { headers });
+  } catch (err) {
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+// Backward compatibility endpoints for existing UI
+app.get('/api/admin/storage-stats', async (c) => {
+  try {
+    const r2 = getR2Binding(c.env);
+    let totalSize = 0;
+    let totalObjects = 0;
+    let cursor;
+    let isTruncated = true;
+    while (isTruncated) {
+      const list = await r2.list({ limit: 1000, cursor });
+      for (const obj of list.objects) { totalSize += obj.size; totalObjects++; }
+      isTruncated = list.truncated;
+      cursor = list.cursor;
+      if (totalObjects >= 50000) break;
+    }
+    return c.json({ ok: true, totalSize, totalObjects });
+  } catch (err) {
+    return c.json({ ok: false, error: err.message }, 500);
+  }
+});
+
+// Serve public files directly
+app.get('/public/:category/:filename', async (c) => {
+  try {
+    const category = c.req.param('category');
+    const filename = c.req.param('filename');
+    const path = `public/${category}/${filename}`;
+    
+    const r2 = getR2Binding(c.env);
+    const obj = await r2.get(path);
+    
+    if (!obj) return new Response('Object Not Found', { status: 404 });
+    
+    const headers = new Headers();
+    obj.writeHttpMetadata(headers);
+    headers.set('etag', obj.etag);
+    headers.set('Cache-Control', 'public, max-age=86400');
+    return new Response(obj.body, { headers });
+  } catch (err) {
+    return c.json({ error: 'Failed to fetch asset' }, 500);
   }
 });
 
 app.get('/api/storage/documents/:filename', async (c) => {
-  const filename = c.req.param('filename');
-  if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) return c.json({ error: 'Invalid filename' }, 400);
-
-  const s3 = getS3Client(c.env);
-  const command = new GetObjectCommand({
-    Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
-    Key: `private/documents/${filename}`,
-  });
-
   try {
-    const url = await getSignedUrl(s3, command, { expiresIn: 60 });
-    const b2Response = await fetch(url);
-    if (!b2Response.ok) return new Response('Object Not Found', { status: 404 });
+    const filename = c.req.param('filename');
+    const path = `private/documents/${filename}`;
+    
+    const r2 = getR2Binding(c.env);
+    const obj = await r2.get(path);
+    
+    if (!obj) return new Response('Object Not Found', { status: 404 });
+    
     const headers = new Headers();
-    b2Response.headers.forEach((value, key) => headers.set(key, value));
-    return new Response(b2Response.body, { headers });
+    obj.writeHttpMetadata(headers);
+    headers.set('etag', obj.etag);
+    return new Response(obj.body, { headers });
   } catch (err) {
     return c.json({ error: 'Failed to fetch document' }, 500);
-  }
-});
-
-// --- Public B2 Assets (No Auth) ---
-app.get('/public/:category/:filename', async (c) => {
-  const category = c.req.param('category');
-  const filename = c.req.param('filename');
-  if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) return c.json({ error: 'Invalid filename' }, 400);
-  
-  const allowedCategories = ['images', 'videos', 'apks', 'product-images'];
-  if (!allowedCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400);
-
-  const s3 = getS3Client(c.env);
-  const command = new GetObjectCommand({
-    Bucket: c.env.BUCKET_NAME || 'rynixtech-storage',
-    Key: `public/${category}/${filename}`,
-  });
-
-  try {
-    const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
-    const b2Response = await fetch(url);
-    if (!b2Response.ok) return new Response('Object Not Found', { status: 404 });
-    const headers = new Headers();
-    b2Response.headers.forEach((value, key) => headers.set(key, value));
-    headers.set('Cache-Control', 'public, max-age=86400');
-    return new Response(b2Response.body, { headers });
-  } catch (err) {
-    return c.json({ error: 'Failed to fetch asset' }, 500);
   }
 });
 
@@ -639,7 +712,7 @@ app.post('/api/admin/healthCheck', async (c) => {
   }
 
   addBrainEvent("Diagnostic", status, `Manual scan initiated. Incidents: ${activeIncidents}`);
-  return c.json({ data: { status, activeIncidents, lastCheck: new Date().toISOString(), services } });
+  return c.json({ data: { status, activeIncidents, lastCheck: new Date().toISOString(), services, envKeys: Object.keys(c.env) } });
 });
 
 export default {
