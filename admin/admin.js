@@ -5,39 +5,39 @@ const sidebarStructure = [
     group: 'MAIN',
     items: [
       { id: 'dashboard', icon: '📊', label: 'Dashboard', route: './modules/dashboard.js' },
-      { id: 'analytics', icon: '📈', label: 'Analytics', route: './modules/coming_soon.js' },
+      { id: 'analytics', icon: '📈', label: 'Analytics', route: './modules/analytics.js' },
       { id: 'notifications', icon: '🔔', label: 'Notifications', route: './modules/notifications.js' }
     ]
   },
   {
     group: 'COMMERCE',
     items: [
-      { id: 'shopping_store', icon: '🛍️', label: 'Shopping Store', route: './modules/coming_soon.js' },
-      { id: 'book_store', icon: '📚', label: 'Book Store', route: './modules/coming_soon.js' },
-      { id: 'digital_products', icon: '💻', label: 'Digital Products', route: './modules/coming_soon.js' },
+      { id: 'shopping_store', icon: '🛍️', label: 'Shopping Store', route: './modules/shopping_store.js' },
+      { id: 'book_store', icon: '📚', label: 'Book Store', route: './modules/book_store.js' },
+      { id: 'digital_products', icon: '💻', label: 'Digital Products', route: './modules/digital_products.js' },
       { id: 'app_store', icon: '📱', label: 'APK/App Store', route: './modules/apps.js' },
-      { id: 'media_store', icon: '🎵', label: 'Media Store', route: './modules/coming_soon.js' },
-      { id: 'coupons', icon: '🏷️', label: 'Coupons & Offers', route: './modules/coming_soon.js' },
-      { id: 'categories', icon: '📁', label: 'Categories', route: './modules/coming_soon.js' }
+      { id: 'media_store', icon: '🎵', label: 'Media Store', route: './modules/media_store.js' },
+      { id: 'coupons', icon: '🏷️', label: 'Coupons & Offers', route: './modules/coupons.js' },
+      { id: 'categories', icon: '📁', label: 'Categories', route: './modules/categories.js' }
     ]
   },
   {
     group: 'CATALOG',
     items: [
       { id: 'products', icon: '📦', label: 'Products', route: './modules/products.js' },
-      { id: 'inventory', icon: '🏢', label: 'Inventory', route: './modules/coming_soon.js' },
+      { id: 'inventory', icon: '🏢', label: 'Inventory', route: './modules/inventory.js' },
       { id: 'images', icon: '🖼️', label: 'Images', route: './modules/images.js' },
       { id: 'videos', icon: '🎬', label: 'Videos', route: './modules/videos.js' },
       { id: 'files', icon: '📄', label: 'Files', route: './modules/files.js' },
-      { id: 'reviews', icon: '⭐', label: 'Product Reviews', route: './modules/coming_soon.js' }
+      { id: 'reviews', icon: '⭐', label: 'Product Reviews', route: './modules/reviews.js' }
     ]
   },
   {
     group: 'CUSTOMERS',
     items: [
       { id: 'users', icon: '👥', label: 'Users', route: './modules/users.js' },
-      { id: 'admins', icon: '🛡️', label: 'Admins', route: './modules/coming_soon.js' },
-      { id: 'customer_activity', icon: '📉', label: 'Customer Activity', route: './modules/coming_soon.js' },
+      { id: 'admins', icon: '🛡️', label: 'Admins', route: './modules/admins.js' },
+      { id: 'customer_activity', icon: '📉', label: 'Customer Activity', route: './modules/customer_activity.js' },
       { id: 'support', icon: '🎧', label: 'Support', route: './modules/support.js' }
     ]
   },
@@ -45,50 +45,50 @@ const sidebarStructure = [
     group: 'ORDERS',
     items: [
       { id: 'all_orders', icon: '🛒', label: 'All Orders', route: './modules/orders.js' },
-      { id: 'pending', icon: '⏳', label: 'Pending', route: './modules/coming_soon.js' },
-      { id: 'processing', icon: '⚙️', label: 'Processing', route: './modules/coming_soon.js' },
-      { id: 'shipped', icon: '🚚', label: 'Shipped', route: './modules/coming_soon.js' },
-      { id: 'delivered', icon: '✅', label: 'Delivered', route: './modules/coming_soon.js' },
-      { id: 'returns', icon: '↩️', label: 'Returns / Refunds', route: './modules/coming_soon.js' }
+      { id: 'pending', icon: '⏳', label: 'Pending', route: './modules/pending.js' },
+      { id: 'processing', icon: '⚙️', label: 'Processing', route: './modules/processing.js' },
+      { id: 'shipped', icon: '🚚', label: 'Shipped', route: './modules/shipped.js' },
+      { id: 'delivered', icon: '✅', label: 'Delivered', route: './modules/delivered.js' },
+      { id: 'returns', icon: '↩️', label: 'Returns / Refunds', route: './modules/returns.js' }
     ]
   },
   {
     group: 'WEBSITE',
     items: [
       { id: 'homepage', icon: '🏠', label: 'Homepage', route: './modules/website.js' },
-      { id: 'pages', icon: '📄', label: 'Pages', route: './modules/coming_soon.js' },
-      { id: 'banners', icon: '🖼️', label: 'Banners', route: './modules/coming_soon.js' },
-      { id: 'menus', icon: '🔗', label: 'Menus', route: './modules/coming_soon.js' },
-      { id: 'announcements', icon: '📢', label: 'Announcements', route: './modules/coming_soon.js' },
-      { id: 'seo', icon: '🔍', label: 'SEO', route: './modules/coming_soon.js' }
+      { id: 'pages', icon: '📄', label: 'Pages', route: './modules/pages.js' },
+      { id: 'banners', icon: '🖼️', label: 'Banners', route: './modules/banners.js' },
+      { id: 'menus', icon: '🔗', label: 'Menus', route: './modules/menus.js' },
+      { id: 'announcements', icon: '📢', label: 'Announcements', route: './modules/announcements.js' },
+      { id: 'seo', icon: '🔍', label: 'SEO', route: './modules/seo.js' }
     ]
   },
   {
     group: 'APPS',
     items: [
       { id: 'apk_manager', icon: '🤖', label: 'APK Manager', route: './modules/apps.js' },
-      { id: 'app_versions', icon: '🔄', label: 'App Versions', route: './modules/coming_soon.js' },
-      { id: 'downloads', icon: '📥', label: 'Downloads', route: './modules/coming_soon.js' },
-      { id: 'release_notes', icon: '📝', label: 'Release Notes', route: './modules/coming_soon.js' }
+      { id: 'app_versions', icon: '🔄', label: 'App Versions', route: './modules/app_versions.js' },
+      { id: 'downloads', icon: '📥', label: 'Downloads', route: './modules/downloads.js' },
+      { id: 'release_notes', icon: '📝', label: 'Release Notes', route: './modules/release_notes.js' }
     ]
   },
   {
     group: 'BOOK STORE',
     items: [
-      { id: 'books', icon: '📖', label: 'Books', route: './modules/coming_soon.js' },
-      { id: 'authors', icon: '✍️', label: 'Authors', route: './modules/coming_soon.js' },
-      { id: 'book_categories', icon: '📑', label: 'Categories', route: './modules/coming_soon.js' },
-      { id: 'ebooks', icon: '📱', label: 'eBooks', route: './modules/coming_soon.js' },
-      { id: 'book_orders', icon: '📦', label: 'Book Orders', route: './modules/coming_soon.js' }
+      { id: 'books', icon: '📖', label: 'Books', route: './modules/books.js' },
+      { id: 'authors', icon: '✍️', label: 'Authors', route: './modules/authors.js' },
+      { id: 'book_categories', icon: '📑', label: 'Categories', route: './modules/book_categories.js' },
+      { id: 'ebooks', icon: '📱', label: 'eBooks', route: './modules/ebooks.js' },
+      { id: 'book_orders', icon: '📦', label: 'Book Orders', route: './modules/book_orders.js' }
     ]
   },
   {
     group: 'MEDIA',
     items: [
       { id: 'media_videos', icon: '📽️', label: 'Videos', route: './modules/videos.js' },
-      { id: 'media_audio', icon: '🎵', label: 'Audio', route: './modules/coming_soon.js' },
+      { id: 'media_audio', icon: '🎵', label: 'Audio', route: './modules/media_audio.js' },
       { id: 'media_images', icon: '🖼️', label: 'Images', route: './modules/images.js' },
-      { id: 'media_categories', icon: '📂', label: 'Media Categories', route: './modules/coming_soon.js' }
+      { id: 'media_categories', icon: '📂', label: 'Media Categories', route: './modules/media_categories.js' }
     ]
   },
   {
@@ -103,19 +103,19 @@ const sidebarStructure = [
       { id: 'rollback', icon: '⏪', label: 'Recovery / Rollback', route: './modules/rollback.js' },
       { id: 'diagnostics', icon: '🔬', label: 'System Diagnostics', route: './modules/diagnostics.js' },
       { id: 'activity', icon: '📋', label: 'Activity Log', route: './modules/activity.js' },
-      { id: 'storage', icon: '💾', label: 'Storage', route: './modules/coming_soon.js' },
-      { id: 'security', icon: '🔒', label: 'Security', route: './modules/coming_soon.js' }
+      { id: 'storage', icon: '💾', label: 'Storage', route: './modules/storage.js' },
+      { id: 'security', icon: '🔒', label: 'Security', route: './modules/security.js' }
     ]
   },
   {
     group: 'SETTINGS',
     items: [
       { id: 'website_settings', icon: '🌐', label: 'Website Settings', route: './modules/settings.js' },
-      { id: 'store_settings', icon: '🏪', label: 'Store Settings', route: './modules/coming_soon.js' },
-      { id: 'payment_settings', icon: '💳', label: 'Payment Settings', route: './modules/coming_soon.js' },
-      { id: 'shipping_settings', icon: '🚢', label: 'Shipping Settings', route: './modules/coming_soon.js' },
-      { id: 'notifications_settings', icon: '📨', label: 'Notifications', route: './modules/coming_soon.js' },
-      { id: 'admin_settings', icon: '🛠️', label: 'Admin Settings', route: './modules/coming_soon.js' }
+      { id: 'store_settings', icon: '🏪', label: 'Store Settings', route: './modules/store_settings.js' },
+      { id: 'payment_settings', icon: '💳', label: 'Payment Settings', route: './modules/payment_settings.js' },
+      { id: 'shipping_settings', icon: '🚢', label: 'Shipping Settings', route: './modules/shipping_settings.js' },
+      { id: 'notifications_settings', icon: '📨', label: 'Notifications', route: './modules/notifications_settings.js' },
+      { id: 'admin_settings', icon: '🛠️', label: 'Admin Settings', route: './modules/admin_settings.js' }
     ]
   }
 ];

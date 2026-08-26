@@ -1,5 +1,5 @@
 import { db, deleteB2Object , escapeHTML} from '../admin-firebase.js';
-import { collection, query, orderBy, limit, getDocs, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
+import { collection, query, orderBy, limit, getDocs, getDoc, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
     container.innerHTML = `
@@ -106,8 +106,25 @@ window.deleteApp = async (id, fullPath) => {
 }
 
 window.editApp = async (id) => {
-    // Basic implementation for edit mode
-    alert('Edit mode not fully wired in mockup, implement firestore read');
+    try {
+        const docRef = doc(db, 'apps', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            document.getElementById('app-id').value = id;
+            document.getElementById('app-name').value = data.name || '';
+            document.getElementById('app-version').value = data.version || '';
+            document.getElementById('app-desc').value = data.description || '';
+            document.getElementById('app-active').checked = !!data.active;
+            
+            document.getElementById('app-modal').style.display = 'block';
+        } else {
+            alert('App not found');
+        }
+    } catch(e) {
+        console.error(e);
+        alert('Error loading app data');
+    }
 }
 
 async function saveApp() {

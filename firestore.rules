@@ -100,6 +100,130 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /analytics_data/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /shopping_store/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /digital_products/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /media_store/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /coupons/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /inventory/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /reviews/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /admins/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /customer_activity/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /returns/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /pages/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /banners/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /menus/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /announcements/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /seo_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /app_versions/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /downloads/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /release_notes/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /authors/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /book_categories/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /ebooks/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /book_orders/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /audio_media/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /media_categories/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /storage_stats/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /security_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /store_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /payment_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /shipping_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /notifications_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /admin_settings/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
