@@ -8,8 +8,6 @@ export async function render(container) {
         </div>
         <div class="tabs">
             <button class="tab-btn active" data-tab="hero">Hero Section</button>
-            <button class="tab-btn" data-tab="announcements">Announcements</button>
-            <button class="tab-btn" data-tab="banners">Banners</button>
             <button class="tab-btn" data-tab="contact">Contact Info</button>
         </div>
         <div class="tab-content" id="tab-hero">
@@ -20,12 +18,6 @@ export async function render(container) {
             <label>CTA Button Text</label><input type="text" id="hero-cta-text" class="form-control" />
             <label>CTA Button Link</label><input type="text" id="hero-cta-link" class="form-control" />
             <button id="save-hero" class="btn btn-primary">Save Hero</button>
-        </div>
-        <div class="tab-content" id="tab-announcements" style="display:none;">
-            <h3>Announcements (Coming Soon)</h3>
-        </div>
-        <div class="tab-content" id="tab-banners" style="display:none;">
-            <h3>Banners (Coming Soon)</h3>
         </div>
         <div class="tab-content" id="tab-contact" style="display:none;">
             <h3>Contact Info</h3>

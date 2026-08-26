@@ -1,0 +1,877 @@
+./auth.js:2:export async function ensureUserProfile(user,extraData={}){if(!user||!user.uid)return null;const userRef=doc(db,"users",user.uid);const profileData={email:user.email||"",displayName:user.displayName||extraData.displayName||"",photoURL:user.photoURL||"",lastLoginAt:serverTimestamp(),...extraData};try{await setDoc(userRef,profileData,{merge:true});return profileData;}catch(error){console.error("Firestore user profile save failed:",error);return null;}}
+./auth.js:3:export async function getUserProfile(uid){if(!uid)return null;try{const snap=await getDoc(doc(db,"users",uid));if(snap.exists()){return snap.data();}}catch(error){console.error("Error loading user profile:",error);}return null;}
+./auth.js:7:        setTimeout(() => reject(new Error('Role check timed out')), 10000)
+./auth.js:20:        console.error("Failed to check admin claim", e);
+./auth.js:36:    }catch(error){
+./auth.js:37:        console.error("Google sign-in error:", error);
+./auth.js:38:        alert(error.message||"Google sign-in failed.");
+./auth.js:45:    signOut(auth).then(()=>{window.location.href="index.html";}).catch(error=>{console.error("Logout error:",error);window.location.href="index.html";});
+./firebase.js:49:        throw new Error('Unable to reach the backend. Check Worker URL/CORS.');
+./firebase.js:55:    if (!res.ok) throw new Error(result.error || result.message || 'API Error');
+./functions/index.js:1:const { onCall, HttpsError } = require("firebase-functions/v2/https");
+./functions/admin.js:1:const { onCall, HttpsError } = require("firebase-functions/v2/https");
+./functions/admin.js:30:    throw new HttpsError("unauthenticated", "Must be logged in.");
+./functions/admin.js:37:    throw new HttpsError("permission-denied", "Unauthorized.");
+./functions/admin.js:61:    throw new HttpsError("permission-denied", "Admin only.");
+./functions/admin.js:88:    throw new HttpsError("permission-denied", "Admin only.");
+./functions/admin.js:100:  const [productsSnap, ordersSnap, filesSnap, appsSnap, errorsSnap] = await Promise.all([
+./functions/admin.js:105:    db.collection("errors").where("status", "==", "open").count().get(),
+./functions/admin.js:114:    activeErrors: errorsSnap.data().count,
+./functions/admin.js:121:    throw new HttpsError("permission-denied", "Admin only.");
+./functions/admin.js:126:    throw new HttpsError("invalid-argument", "UID is required.");
+./functions/admin.js:129:    throw new HttpsError("invalid-argument", "Cannot disable your own account.");
+./functions/admin.js:147:    throw new HttpsError("permission-denied", "Admin only.");
+./functions/admin.js:152:    throw new HttpsError("invalid-argument", "UID is required.");
+./admin/admin-auth.js:23:  } catch (error) {
+./admin/admin-auth.js:24:    console.error('Logout error:', error);
+./admin/admin-auth.js:86:    } catch (error) {
+./admin/admin-auth.js:87:      console.error('Error fetching custom claims:', error);
+./admin/admin-firebase.js:16:    if (!res.ok) throw new Error(data.error || 'Delete failed');
+./admin/admin.js:99:      { id: 'errors', icon: '⚠️', label: 'Error Monitor', route: './modules/errors.js' },
+./admin/admin.js:157:  } catch (error) {
+./admin/admin.js:158:    console.error(`Error loading module "${route}":`, error);
+./admin/admin.js:164:        <p class="text-muted">${error.message}</p>
+./admin/components/sidebar.js:14:    { id: 'errors', icon: '⚠️', label: 'Errors' },
+./admin/components/toast.js:23:    error: { bg: 'rgba(255, 117, 143, 0.1)', border: '#ff758f', text: '#ff758f' },
+./admin/components/uploader.js:20:      throw new Error('FILE_TOO_LARGE');
+./admin/components/uploader.js:88:        reject(new Error('UPLOAD_CANCELLED'));
+./admin/components/uploader.js:111:            throw new Error(data.message || data.error || `HTTP ${res.status}`);
+./admin/components/uploader.js:115:            throw new Error(data.message || data.error || 'Upload authorization failed');
+./admin/components/uploader.js:131:              reject(new Error('UPLOAD_TIMEOUT'));
+./admin/components/uploader.js:175:                    SystemUploader.logErrorToFirebase(file.name, category, 'METADATA_SAVE_FAILED: ' + err.message);
+./admin/components/uploader.js:176:                    reject(new Error('Metadata save failed'));
+./admin/components/uploader.js:184:              SystemUploader.logErrorToFirebase(file.name, category, `HTTP ${xhr.status} Storage unavailable`);
+./admin/components/uploader.js:185:              reject(new Error(`Storage unavailable`));
+./admin/components/uploader.js:189:          xhr.onerror = () => {
+./admin/components/uploader.js:192:            SystemUploader.logErrorToFirebase(file.name, category, 'Cannot reach upload server (B2)');
+./admin/components/uploader.js:193:            reject(new Error('Cannot reach upload server'));
+./admin/components/uploader.js:199:          let errorMsg = err.message || 'Unknown server error';
+./admin/components/uploader.js:200:          if (errorMsg === 'Failed to fetch' || errorMsg.includes('NetworkError')) {
+./admin/components/uploader.js:201:             errorMsg = 'Cannot reach upload server';
+./admin/components/uploader.js:203:          if (errorMsg.includes('Unauthorized') || errorMsg.includes('Missing or invalid Authorization')) {
+./admin/components/uploader.js:204:             errorMsg = 'Authentication expired';
+./admin/components/uploader.js:206:          setFailed(errorMsg);
+./admin/components/uploader.js:207:          SystemUploader.logErrorToFirebase(file.name, category, errorMsg);
+./admin/components/uploader.js:217:  static async logErrorToFirebase(filename, category, errorMessage) {
+./admin/components/uploader.js:221:      await addDoc(collection(db, 'errors'), {
+./admin/components/uploader.js:226:        error: errorMessage,
+./admin/components/uploader.js:232:      console.error('Failed to log upload error to Firestore', e);
+./admin/modules/activity.js:72:        } catch (error) {
+./admin/modules/activity.js:73:            console.error('[Diagnostic] Firestore error for activityLog:', error.code, error.message);
+./admin/modules/activity.js:76:                    <h3 style="margin-top: 0;">Error Loading Activity Log</h3>
+./admin/modules/activity.js:77:                    <p style="opacity: 0.9;">${escapeHTML(error.message || 'Permission denied or network error')}</p>
+./admin/modules/alerts.js:64:                if (data.severity === 'CRITICAL' || data.severity === 'ERROR') {
+./admin/modules/alerts.js:87:            console.error(e);
+./admin/modules/alerts.js:88:            alertsList.innerHTML = \`<div style="color: #ff758f;">Error loading alerts: \${escapeHTML(e.message)}</div>\`;
+./admin/modules/apps.js:92:        console.error(e);
+./admin/modules/apps.js:93:        grid.innerHTML = '<div style="color: #ff758f;">Error loading apps</div>';
+./admin/modules/apps.js:104:        alert('Error deleting');
+./admin/modules/apps.js:166:        console.error(e);
+./admin/modules/apps.js:167:        alert('Error saving app');
+./admin/modules/autorepair.js:61:                        ${e.type || e.status} - ${e.message || e.error || 'Check passed'}
+./admin/modules/brain_assistant.js:131:                    funcResult = { error: "Function not implemented." };
+./admin/modules/brain_assistant.js:145:             return `<span style="color:#ff758f">Error: ${e.message}</span>`;
+./admin/modules/dashboard.js:14:        let stats = { users: 0, products: 0, orders: 0, files: 0, apps: 0, errors: 0 };
+./admin/modules/dashboard.js:25:              errors: d.activeErrors || d.errors || 0,
+./admin/modules/dashboard.js:93:                        <div style="color: #aeb8d2; font-size: 0.9em;">⚠️ Active Errors</div>
+./admin/modules/dashboard.js:94:                        <div style="font-size: 2em; color: ${stats.errors > 0 ? '#ff758f' : '#64dfac'};">${escapeHTML(formatNumber(stats.errors))}</div>
+./admin/modules/dashboard.js:116:    } catch (error) {
+./admin/modules/dashboard.js:117:        console.error('Error rendering dashboard:', error);
+./admin/modules/dashboard.js:118:        container.innerHTML = `<div style="color: #ff758f;">Error loading dashboard data.</div>`;
+./admin/modules/dashboard.js:140:    const handleError = (element, error, retryKey, retryFn) => {
+./admin/modules/dashboard.js:141:        console.error(`[Diagnostic] Firestore error for ${retryKey}:`, error.code, error.message);
+./admin/modules/dashboard.js:145:                <div style="font-weight: bold; margin-bottom: 4px;">Error Loading Data</div>
+./admin/modules/dashboard.js:146:                <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 8px; word-break: break-word;">${escapeHTML(error.message || 'Permission denied or network error')}</div>
+./admin/modules/dashboard.js:167:        }, (error) => handleError(activityList, error, 'activity', setupActivity));
+./admin/modules/dashboard.js:188:        }, (error) => handleError(filesList, error, 'files', setupFiles));
+./admin/modules/dashboard.js:209:        }, (error) => handleError(ordersList, error, 'orders', setupOrders));
+./admin/modules/diagnostics.js:48:                log(`[SYSTEM] DIAGNOSTIC ERROR: ${e.message}`, '#ff758f');
+./admin/modules/errors.js:7:            <h2>Error Tracking</h2>
+./admin/modules/errors.js:8:            <div id="error-stats" class="stats">Loading...</div>
+./admin/modules/errors.js:10:        <div class="table-container" id="errors-container">
+./admin/modules/errors.js:11:            <table id="errors-table">
+./admin/modules/errors.js:23:                <tbody id="errors-tbody"></tbody>
+./admin/modules/errors.js:28:    const tbody = document.getElementById('errors-tbody');
+./admin/modules/errors.js:29:    const containerDiv = document.getElementById('errors-container');
+./admin/modules/errors.js:31:    window.retryErrors = () => {
+./admin/modules/errors.js:32:        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #aeb8d2;">Loading errors...</td></tr>';
+./admin/modules/errors.js:33:        loadErrors();
+./admin/modules/errors.js:36:    async function loadErrors() {
+./admin/modules/errors.js:38:            const q = query(collection(db, 'errors'), orderBy('timestamp', 'desc'), limit(50));
+./admin/modules/errors.js:46:                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No errors found</td></tr>';
+./admin/modules/errors.js:47:                document.getElementById('error-stats').innerHTML = `<span class="badge">Total: 0</span> <span class="badge success">Open: 0</span>`;
+./admin/modules/errors.js:70:                    <td>${escapeHTML(icon)} ${escapeHTML(data.type || data.system || 'Error')}</td>
+./admin/modules/errors.js:71:                    <td>${(data.message || data.error || '').substring(0, 50)}...</td>
+./admin/modules/errors.js:83:            document.getElementById('error-stats').innerHTML = `
+./admin/modules/errors.js:93:                    await updateDoc(doc(db, 'errors', id), { status: newStatus });
+./admin/modules/errors.js:94:                    loadErrors();
+./admin/modules/errors.js:97:        } catch (error) {
+./admin/modules/errors.js:98:            console.error('[Diagnostic] Firestore error for errors:', error.code, error.message);
+./admin/modules/errors.js:101:                    <h3 style="margin-top: 0;">Error Loading Error Center</h3>
+./admin/modules/errors.js:102:                    <p style="opacity: 0.9;">${escapeHTML(error.message || 'Permission denied or network error')}</p>
+./admin/modules/errors.js:103:                    <button onclick="window.retryErrors()" style="background: #ff758f; color: #0a0e1a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 10px;">Retry Connection</button>
+./admin/modules/errors.js:106:            document.getElementById('error-stats').innerHTML = `<span class="badge danger">Error</span>`;
+./admin/modules/errors.js:110:    loadErrors();
+./admin/modules/files.js:104:        console.error(e);
+./admin/modules/files.js:105:        tbody.innerHTML = '<tr><td colspan="5" style="padding: 16px; text-align: center; color: #ff758f;">Error loading files</td></tr>';
+./admin/modules/files.js:137:        } catch (error) {
+./admin/modules/files.js:138:            console.error('Upload failed for', file.name, error);
+./admin/modules/files.js:161:        console.error(e);
+./admin/modules/files.js:162:        alert('Error deleting file');
+./admin/modules/health.js:66:                    ${!isHealthy ? `<div style="margin-bottom: 8px; color: #ff758f;">[SYSTEM] ${activeIncidents} incident(s) detected. Check Error logs.</div>` : ''}
+./admin/modules/health.js:71:        console.error('[Diagnostic] Health check failed:', e);
+./admin/modules/health.js:80:                <p style="font-size: 0.9em; opacity: 0.9; margin-top: 10px;">${e.message || 'Network error'}</p>
+./admin/modules/images.js:61:        console.error(e);
+./admin/modules/images.js:62:        grid.innerHTML = '<div style="color: #ff758f;">Error loading images</div>';
+./admin/modules/images.js:78:        alert('Error deleting');
+./admin/modules/images.js:109:        } catch (error) {
+./admin/modules/images.js:110:            console.error('Upload failed for', file.name, error);
+./admin/modules/notifications.js:69:                    console.error(err);
+./admin/modules/orders.js:115:        } catch (error) {
+./admin/modules/orders.js:116:            console.error(error);
+./admin/modules/orders.js:117:            tbody.innerHTML = \`<tr><td colspan="8" style="padding:20px; text-align:center; color:#ff758f;">Error: \${escapeHTML(error.message)}. You may need to create a Firestore composite index.</td></tr>\`;
+./admin/modules/products.js:136:            console.error(e);
+./admin/modules/products.js:137:            tbody.innerHTML = '<tr><td colspan="7" style="padding: 16px; text-align: center; color: #ff758f;">Error loading products</td></tr>';
+./admin/modules/products.js:207:                            await deleteB2Object(objectKey).catch(e => console.warn('B2 delete error:', e));
+./admin/modules/products.js:213:                    alert('Error deleting: ' + err.message);
+./admin/modules/products.js:294:                throw new Error("Price and stock cannot be negative.");
+./admin/modules/products.js:324:            console.error(err);
+./admin/modules/products.js:325:            alert('Error saving product: ' + err.message);
+./admin/modules/repairhistory.js:16:                        <th style="padding: 12px 8px;">Detected Error</th>
+./admin/modules/repairhistory.js:34:                        <td style="padding: 12px 8px; color: #ff758f;">SyntaxError: Invalid Token</td>
+./admin/modules/settings.js:22:                <h3>Error Tracking Snippet</h3>
+./admin/modules/settings.js:23:                <p>Include this snippet in your main frontend website to enable error tracking:</p>
+./admin/modules/settings.js:30:  window.addEventListener('error', (event) => {
+./admin/modules/settings.js:32:    addDoc(collection(db, 'errors'), {
+./admin/modules/settings.js:33:      type: 'JS Error',
+./admin/modules/support.js:48:            console.error(e);
+./admin/modules/support.js:49:            tbody.innerHTML = \`<tr><td colspan="6" style="padding:20px; text-align:center; color:#ff758f;">Error: \${e.message}</td></tr>\`;
+./admin/modules/support.js:91:                    alert('Error: ' + err.message);
+./admin/modules/users.js:82:        } catch (error) {
+./admin/modules/users.js:83:            console.error(error);
+./admin/modules/users.js:84:            tbody.innerHTML = \`<tr><td colspan="8" style="padding:20px; text-align:center; color: #ff758f;">Failed to load users: \${escapeHTML(error.message)}</td></tr>\`;
+./admin/modules/users.js:144:                    alert('Error changing user status: ' + err.message);
+./admin/modules/users.js:162:                } catch(e) { console.error('Error fetching role', e); }
+./admin/modules/videos.js:65:        console.error(e);
+./admin/modules/videos.js:66:        grid.innerHTML = '<div style="color: #ff758f;">Error loading videos</div>';
+./admin/modules/videos.js:83:        alert('Error deleting');
+./admin/modules/videos.js:114:        } catch (error) {
+./admin/modules/videos.js:115:            console.error('Upload failed for', file.name, error);
+./chatbot.js:180:    console.error('Chat error:', err);
+./chatbot.js:181:    botMsg.textContent = 'Sorry, there was an error processing your request.';
+./cloudflare-worker/dist/index.js:350:      } catch (error) {
+./cloudflare-worker/dist/index.js:351:        Object.defineProperty(error, "$response", {
+./cloudflare-worker/dist/index.js:357:        if (!("$metadata" in error)) {
+./cloudflare-worker/dist/index.js:358:          const hint = `Deserialization error: to see the raw response, inspect the hidden field {error}.$response on this object.`;
+./cloudflare-worker/dist/index.js:360:            error.message += "\n  " + hint;
+./cloudflare-worker/dist/index.js:368:          if (typeof error.$responseBodyText !== "undefined") {
+./cloudflare-worker/dist/index.js:369:            if (error.$response) {
+./cloudflare-worker/dist/index.js:370:              error.$response.body = error.$responseBodyText;
+./cloudflare-worker/dist/index.js:377:              error.$metadata = {
+./cloudflare-worker/dist/index.js:387:        throw error;
+./cloudflare-worker/dist/index.js:561:          throw new Error(`@smithy/core/schema - NormalizedSchema member init ${this.getName(true)} missing member name.`);
+./cloudflare-worker/dist/index.js:597:          throw new Error(`@smithy/core/schema - may not init unwrapped member schema=${JSON.stringify(ref, null, 2)}.`);
+./cloudflare-worker/dist/index.js:703:          throw new Error(`@smithy/core/schema - cannot get key for non-map: ${this.getName(true)}`);
+./cloudflare-worker/dist/index.js:716:        throw new Error(`@smithy/core/schema - ${this.getName(true)} has no value member.`);
+./cloudflare-worker/dist/index.js:728:        throw new Error(`@smithy/core/schema - ${this.getName(true)} has no member=${memberName}.`);
+./cloudflare-worker/dist/index.js:755:          throw new Error("@smithy/core/schema - cannot iterate non-struct schema.");
+./cloudflare-worker/dist/index.js:836:          throw new Error(`@smithy/core/schema - schema not found for ${id}`);
+./cloudflare-worker/dist/index.js:840:      registerError(es, ctor) {
+./cloudflare-worker/dist/index.js:841:        const $error = es;
+./cloudflare-worker/dist/index.js:842:        const ns = $error[1];
+./cloudflare-worker/dist/index.js:844:          r2.schemas.set(ns + "#" + $error[2], $error);
+./cloudflare-worker/dist/index.js:845:          r2.exceptions.set($error, ctor);
+./cloudflare-worker/dist/index.js:848:      getErrorCtor(es) {
+./cloudflare-worker/dist/index.js:849:        const $error = es;
+./cloudflare-worker/dist/index.js:850:        if (this.exceptions.has($error)) {
+./cloudflare-worker/dist/index.js:851:          return this.exceptions.get($error);
+./cloudflare-worker/dist/index.js:853:        const registry = _TypeRegistry.for($error[1]);
+./cloudflare-worker/dist/index.js:854:        return registry.exceptions.get($error);
+./cloudflare-worker/dist/index.js:936:              throw new TypeError(`Invalid character ${input[j2]} in base64 string.`);
+./cloudflare-worker/dist/index.js:976:    throw new Error("@smithy/util-base64: toBase64 encoder function only accepts string | Uint8Array.");
+./cloudflare-worker/dist/index.js:1017:      throw new Error(`Unsupported conversion from ${typeof source} to Uint8ArrayBlobAdapter.`);
+./cloudflare-worker/dist/index.js:1046:        throw new Error("@smithy/util-utf8: toUtf8 encoder function only accepts string | Uint8Array.");
+./cloudflare-worker/dist/index.js:1094:      throw new TypeError(`Expected number, got ${typeof value}: ${value}`);
+./cloudflare-worker/dist/index.js:1101:          throw new TypeError(`Expected 32-bit float, got ${value}`);
+./cloudflare-worker/dist/index.js:1113:      throw new TypeError(`Expected integer, got ${typeof value}: ${value}`);
+./cloudflare-worker/dist/index.js:1120:        throw new TypeError(`Expected ${size}-bit integer, got ${value}`);
+./cloudflare-worker/dist/index.js:1144:        throw new TypeError(`Expected real number, got implicit NaN`);
+./cloudflare-worker/dist/index.js:1161:      return String(new TypeError(message2).stack || message2).split("\n").slice(0, 5).filter((s2) => !s2.includes("stackTraceWarning")).join("\n");
+./cloudflare-worker/dist/index.js:1201:        throw new TypeError("RFC-7231 date-times must be expressed as strings");
+./cloudflare-worker/dist/index.js:1223:      throw new TypeError("Invalid RFC-7231 date-time value");
+./cloudflare-worker/dist/index.js:1248:        throw new TypeError(`Invalid month: ${value}`);
+./cloudflare-worker/dist/index.js:1259:        throw new TypeError(`Invalid day for ${MONTHS[month]} in ${year3}: ${day2}`);
+./cloudflare-worker/dist/index.js:1268:        throw new TypeError(`${type} must be between ${lower} and ${upper}, inclusive`);
+./cloudflare-worker/dist/index.js:1338:    throw new Error(`Value ${_v} out of range [${min}, ${max}]`);
+./cloudflare-worker/dist/index.js:1363:          throw new TypeError(`parseEpochTimestamp - numeric string invalid.`);
+./cloudflare-worker/dist/index.js:1370:        throw new TypeError("Epoch timestamps must be valid finite numbers.");
+./cloudflare-worker/dist/index.js:1379:        throw new TypeError("RFC3339 timestamps must be strings");
+./cloudflare-worker/dist/index.js:1383:        throw new TypeError(`Invalid RFC3339 timestamp format ${value}`);
+./cloudflare-worker/dist/index.js:1405:        throw new TypeError("RFC7231 timestamps must be strings.");
+./cloudflare-worker/dist/index.js:1433:      throw new TypeError(`Invalid RFC7231 date-time value ${value}.`);
+./cloudflare-worker/dist/index.js:1442:    throw new Error("Invalid number of delimiters (" + numDelimiters + ") for splitEvery.");
+./cloudflare-worker/dist/index.js:1531:          throw new Error(`@smithy/core/serde - NumericValue string must conform to the Smithy bigDecimal format. Received: "${string}"`);
+./cloudflare-worker/dist/index.js:1551:    throw new Error("Hex encoded strings must have an even number length");
+./cloudflare-worker/dist/index.js:1559:      throw new Error(`Cannot decode unrecognized sequence ${encodedByte} as hexadecimal`);
+./cloudflare-worker/dist/index.js:1615:      throw new Error(`Body Length computation failed for ${body}`);
+./cloudflare-worker/dist/index.js:1689:          throw new Error("Path-style addressing cannot be used with ARN buckets");
+./cloudflare-worker/dist/index.js:1709:        throw new Error(`Invalid ARN: ${bucketName} was an invalid ARN.`);
+./cloudflare-worker/dist/index.js:1804:      throw new Error("config.endpointProvider is not set.");
+./cloudflare-worker/dist/index.js:1845:            throw new Error("Unrecognized endpoint parameter instruction: " + JSON.stringify(instruction));
+./cloudflare-worker/dist/index.js:2065:// node_modules/@smithy/core/dist-es/submodules/endpoints/util-endpoints/types/EndpointError.js
+./cloudflare-worker/dist/index.js:2066:var EndpointError;
+./cloudflare-worker/dist/index.js:2067:var init_EndpointError = __esm({
+./cloudflare-worker/dist/index.js:2068:  "node_modules/@smithy/core/dist-es/submodules/endpoints/util-endpoints/types/EndpointError.js"() {
+./cloudflare-worker/dist/index.js:2069:    EndpointError = class extends Error {
+./cloudflare-worker/dist/index.js:2071:        __name(this, "EndpointError");
+./cloudflare-worker/dist/index.js:2075:        this.name = "EndpointError";
+./cloudflare-worker/dist/index.js:2084:    init_EndpointError();
+./cloudflare-worker/dist/index.js:2166:            throw new EndpointError(`Path: '${path}' does not end with ']'`);
+./cloudflare-worker/dist/index.js:2170:            throw new EndpointError(`Invalid array index: '${arrayIndex}' in path: '${path}'`);
+./cloudflare-worker/dist/index.js:2193:        throw new EndpointError(`Index '${index}' in '${path}' not found in '${JSON.stringify(value)}'`);
+./cloudflare-worker/dist/index.js:2266:        console.error(`Unable to parse ${JSON.stringify(value)} as a whatwg URL.`);
+./cloudflare-worker/dist/index.js:2450:      throw new EndpointError(`'${keyName}': ${String(obj)} is not a string, function or reference.`);
+./cloudflare-worker/dist/index.js:2474:      throw new Error(`function ${fn} not loaded in endpointFunctions.`);
+./cloudflare-worker/dist/index.js:2500:        throw new EndpointError(`'${assign}' is already defined in Reference Record.`);
+./cloudflare-worker/dist/index.js:2523:          throw new EndpointError(`Header '${headerKey}' value '${processedExpr}' is not a string`);
+./cloudflare-worker/dist/index.js:2551:            throw new EndpointError(`Unexpected endpoint property: ${property}`);
+./cloudflare-worker/dist/index.js:2557:          throw new EndpointError(`Unexpected endpoint property type: ${typeof property}`);
+./cloudflare-worker/dist/index.js:2578:        } catch (error) {
+./cloudflare-worker/dist/index.js:2579:          console.error(`Failed to construct URL with ${expression}`, error);
+./cloudflare-worker/dist/index.js:2580:          throw error;
+./cloudflare-worker/dist/index.js:2583:      throw new EndpointError(`Endpoint URL must be a string, got ${typeof expression}`);
+./cloudflare-worker/dist/index.js:2622:          const [, errorExpression] = result;
+./cloudflare-worker/dist/index.js:2623:          throw new EndpointError(evaluateExpression(errorExpression, "Error", closure));
+./cloudflare-worker/dist/index.js:2632:      throw new EndpointError(`No matching endpoint.`);
+./cloudflare-worker/dist/index.js:2694:        throw new Error(`@smithy/util-stream: unsupported source type ${source?.constructor?.name ?? source} in ChecksumStream.`);
+./cloudflare-worker/dist/index.js:2698:        throw new Error("@smithy/util-stream: unable to instantiate ChecksumStream because API unavailable: ReadableStream/TransformStream.");
+./cloudflare-worker/dist/index.js:2711:            const error = new Error(`Checksum mismatch: expected "${expectedChecksum}" but received "${received}" in response header "${checksumSourceLocation}".`);
+./cloudflare-worker/dist/index.js:2712:            controller.error(error);
+./cloudflare-worker/dist/index.js:2842:  throw new Error(`@smithy/util-stream - invalid index ${mode} given to flush()`);
+./cloudflare-worker/dist/index.js:2955:        throw new Error(`Unexpected stream implementation, expect Blob or ReadableStream, got ${name}`);
+./cloudflare-worker/dist/index.js:2960:          throw new Error(ERR_MSG_STREAM_HAS_BEEN_TRANSFORMED);
+./cloudflare-worker/dist/index.js:2967:          throw new Error("Cannot transform payload Blob to web stream. Please make sure the Blob.stream() is polyfilled.\nIf you are using React Native, this API is not yet supported, see: https://react-native.canny.io/feature-requests/p/fetch-streaming-body");
+./cloudflare-worker/dist/index.js:2984:            throw new Error("TextDecoder is not available, please make sure polyfill is provided.");
+./cloudflare-worker/dist/index.js:2989:            throw new Error(ERR_MSG_STREAM_HAS_BEEN_TRANSFORMED);
+./cloudflare-worker/dist/index.js:2997:            throw new Error(`Cannot transform payload to web stream, got ${stream}`);
+./cloudflare-worker/dist/index.js:3253:          throw new Error("Attempted to update an already finished HMAC.");
+./cloudflare-worker/dist/index.js:3264:          throw new Error("Cannot hash more than 2^53 - 1 bits");
+./cloudflare-worker/dist/index.js:3279:            throw new Error("Attempted to digest an already finished HMAC.");
+./cloudflare-worker/dist/index.js:3482:          throw new Error("Attempted to update an already finished HMAC.");
+./cloudflare-worker/dist/index.js:3499:          throw new Error("Attempted to digest an already finished HMAC.");
+./cloudflare-worker/dist/index.js:3568:          throw new Error("Int64 buffers must be exactly 8 bytes");
+./cloudflare-worker/dist/index.js:3573:          throw new Error(`${number} is too large (or, if negative, too small) to represent as an Int64`);
+./cloudflare-worker/dist/index.js:3673:              throw new Error(`Invalid UUID received: ${header.value}`);
+./cloudflare-worker/dist/index.js:3762:              throw new Error(`Unrecognized header type tag`);
+./cloudflare-worker/dist/index.js:3796:    throw new Error("Provided message too short to accommodate event stream message overhead");
+./cloudflare-worker/dist/index.js:3801:    throw new Error("Reported message length does not match received message length");
+./cloudflare-worker/dist/index.js:3809:    throw new Error(`The prelude checksum specified in the message (${expectedPreludeChecksum}) does not match the calculated CRC32 checksum (${checksummer.digestSync()})`);
+./cloudflare-worker/dist/index.js:3813:    throw new Error(`The message checksum (${checksummer.digestSync()}) did not match the expected value of ${expectedMessageChecksum}`);
+./cloudflare-worker/dist/index.js:4022:      throw new Error("Attempted to allocate an event message where size was not a number: " + size);
+./cloudflare-worker/dist/index.js:4040:          throw new Error("Truncated event message received.");
+./cloudflare-worker/dist/index.js:4103:    if (messageType === "error") {
+./cloudflare-worker/dist/index.js:4104:      const unmodeledError = new Error(message2.headers[":error-message"].value || "UnknownError");
+./cloudflare-worker/dist/index.js:4105:      unmodeledError.name = message2.headers[":error-code"].value;
+./cloudflare-worker/dist/index.js:4106:      throw unmodeledError;
+./cloudflare-worker/dist/index.js:4112:        const error = new Error(toUtf82(message2.body));
+./cloudflare-worker/dist/index.js:4113:        error.name = code;
+./cloudflare-worker/dist/index.js:4114:        throw error;
+./cloudflare-worker/dist/index.js:4126:      throw Error(`Unrecognizable event type: ${message2.headers[":event-type"].value}`);
+./cloudflare-worker/dist/index.js:4267:      compositeErrorRegistry;
+./cloudflare-worker/dist/index.js:4268:      constructor({ marshaller, serializer, deserializer, serdeContext, defaultContentType, compositeErrorRegistry }) {
+./cloudflare-worker/dist/index.js:4274:        this.compositeErrorRegistry = compositeErrorRegistry;
+./cloudflare-worker/dist/index.js:4404:            throw new Error("@smithy::core/protocols - initial-response event encountered in event stream but no response schema given.");
+./cloudflare-worker/dist/index.js:4431:          this.compositeErrorRegistry?.copyFrom(nsRegistry);
+./cloudflare-worker/dist/index.js:4432:          ErrCtor = (this.compositeErrorRegistry ?? nsRegistry)?.getErrorCtor(staticStructuralSchema);
+./cloudflare-worker/dist/index.js:4438:          const $fault = eventStreamSchema.getMergedTraits().error;
+./cloudflare-worker/dist/index.js:4508:            throw new Error("@smithy/core/event-streams - non-struct member not supported in event stream union.");
+./cloudflare-worker/dist/index.js:4566:var compose = /* @__PURE__ */ __name((middleware, onError, onNotFound) => {
+./cloudflare-worker/dist/index.js:4572:        throw new Error("next() called multiple times");
+./cloudflare-worker/dist/index.js:4576:      let isError = false;
+./cloudflare-worker/dist/index.js:4588:          if (err instanceof Error && onError) {
+./cloudflare-worker/dist/index.js:4589:            context.error = err;
+./cloudflare-worker/dist/index.js:4590:            res = await onError(err, context);
+./cloudflare-worker/dist/index.js:4591:            isError = true;
+./cloudflare-worker/dist/index.js:4601:      if (res && (context.finalized === false || isError)) {
+./cloudflare-worker/dist/index.js:5272:   * `.error` can get the error object from the middleware if the Handler throws an error.
+./cloudflare-worker/dist/index.js:5274:   * @see {@link https://hono.dev/docs/api/context#error}
+./cloudflare-worker/dist/index.js:5280:   *   if (c.error) {
+./cloudflare-worker/dist/index.js:5286:  error;
+./cloudflare-worker/dist/index.js:5323:   * @throws Will throw an error if the context does not have a FetchEvent.
+./cloudflare-worker/dist/index.js:5329:      throw Error("This context has no FetchEvent");
+./cloudflare-worker/dist/index.js:5336:   * @throws Will throw an error if the context does not have an ExecutionContext.
+./cloudflare-worker/dist/index.js:5342:      throw Error("This context has no ExecutionContext");
+./cloudflare-worker/dist/index.js:5670:var UnsupportedPathError = class extends Error {
+./cloudflare-worker/dist/index.js:5672:    __name(this, "UnsupportedPathError");
+./cloudflare-worker/dist/index.js:5683:var errorHandler = /* @__PURE__ */ __name((err, c2) => {
+./cloudflare-worker/dist/index.js:5688:  console.error(err);
+./cloudflare-worker/dist/index.js:5689:  return c2.text("Internal Server Error", 500);
+./cloudflare-worker/dist/index.js:5690:}, "errorHandler");
+./cloudflare-worker/dist/index.js:5762:    clone2.errorHandler = this.errorHandler;
+./cloudflare-worker/dist/index.js:5769:  errorHandler = errorHandler;
+./cloudflare-worker/dist/index.js:5792:      if (app2.errorHandler === errorHandler) {
+./cloudflare-worker/dist/index.js:5795:        handler = /* @__PURE__ */ __name(async (c2, next) => (await compose([], app2.errorHandler)(c2, () => r2.handler(c2, next))).res, "handler");
+./cloudflare-worker/dist/index.js:5821:   * `.onError()` handles an error and returns a customized Response.
+./cloudflare-worker/dist/index.js:5823:   * @see {@link https://hono.dev/docs/api/hono#error-handling}
+./cloudflare-worker/dist/index.js:5825:   * @param {ErrorHandler} handler - request Handler for error
+./cloudflare-worker/dist/index.js:5830:   * app.onError((err, c) => {
+./cloudflare-worker/dist/index.js:5831:   *   console.error(`${err}`)
+./cloudflare-worker/dist/index.js:5832:   *   return c.text('Custom Error Message', 500)
+./cloudflare-worker/dist/index.js:5836:  onError = /* @__PURE__ */ __name((handler) => {
+./cloudflare-worker/dist/index.js:5837:    this.errorHandler = handler;
+./cloudflare-worker/dist/index.js:5839:  }, "onError");
+./cloudflare-worker/dist/index.js:5948:  #handleError(err, c2) {
+./cloudflare-worker/dist/index.js:5949:    if (err instanceof Error) {
+./cloudflare-worker/dist/index.js:5950:      return this.errorHandler(err, c2);
+./cloudflare-worker/dist/index.js:5974:        return this.#handleError(err, c2);
+./cloudflare-worker/dist/index.js:5978:      ).catch((err) => this.#handleError(err, c2)) : res ?? this.#notFoundHandler(c2);
+./cloudflare-worker/dist/index.js:5980:    const composed = compose(matchResult[0], this.errorHandler, this.#notFoundHandler);
+./cloudflare-worker/dist/index.js:5985:          throw new Error(
+./cloudflare-worker/dist/index.js:5991:        return this.#handleError(err, c2);
+./cloudflare-worker/dist/index.js:6085:var PATH_ERROR = /* @__PURE__ */ Symbol();
+./cloudflare-worker/dist/index.js:6126:            throw PATH_ERROR;
+./cloudflare-worker/dist/index.js:6130:            throw PATH_ERROR;
+./cloudflare-worker/dist/index.js:6133:            throw PATH_ERROR;
+./cloudflare-worker/dist/index.js:6144:                throw PATH_ERROR;
+./cloudflare-worker/dist/index.js:6159:              throw PATH_ERROR;
+./cloudflare-worker/dist/index.js:6168:      throw PATH_ERROR;
+./cloudflare-worker/dist/index.js:6303:      throw e2 === PATH_ERROR ? new UnsupportedPathError(path) : e2;
+./cloudflare-worker/dist/index.js:6310:      throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
+./cloudflare-worker/dist/index.js:6436:      throw new Error(MESSAGE_MATCHER_IS_ALREADY_BUILT);
+./cloudflare-worker/dist/index.js:6442:      throw new Error("Fatal error");
+./cloudflare-worker/dist/index.js:6457:        if (e2 instanceof UnsupportedPathError) {
+./cloudflare-worker/dist/index.js:6468:      throw new Error("Fatal error");
+./cloudflare-worker/dist/index.js:6475:      throw new Error("No active router has been determined yet.");
+./cloudflare-worker/dist/index.js:6954:          throw new Error(`${entry.toMiddleware} is not found when adding ${getMiddlewareNameWithAliases(entry.name, entry.aliases)} middleware ${entry.relation} ${entry.toMiddleware}`);
+./cloudflare-worker/dist/index.js:6983:            throw new Error(`Duplicate middleware name '${getMiddlewareNameWithAliases(name, _aliases)}'`);
+./cloudflare-worker/dist/index.js:6991:              throw new Error(`"${getMiddlewareNameWithAliases(toOverride.name, toOverride.aliases)}" middleware with ${toOverride.priority} priority in ${toOverride.step} step cannot be overridden by "${getMiddlewareNameWithAliases(name, _aliases)}" middleware with ${entry.priority} priority in ${entry.step} step.`);
+./cloudflare-worker/dist/index.js:7012:            throw new Error(`Duplicate middleware name '${getMiddlewareNameWithAliases(name, _aliases)}'`);
+./cloudflare-worker/dist/index.js:7020:              throw new Error(`"${getMiddlewareNameWithAliases(toOverride.name, toOverride.aliases)}" middleware ${toOverride.relation} "${toOverride.toMiddleware}" middleware cannot be overridden by "${getMiddlewareNameWithAliases(name, _aliases)}" middleware ${entry.relation} "${entry.toMiddleware}" middleware.`);
+./cloudflare-worker/dist/index.js:7339:var ServiceException = class _ServiceException extends Error {
+./cloudflare-worker/dist/index.js:7382:  const message2 = exception.message || exception.Message || "UnknownError";
+./cloudflare-worker/dist/index.js:7516:  error() {
+./cloudflare-worker/dist/index.js:7580:  compositeErrorRegistry;
+./cloudflare-worker/dist/index.js:7584:    this.compositeErrorRegistry = TypeRegistry.for(options.defaultNamespace);
+./cloudflare-worker/dist/index.js:7585:    for (const etr of options.errorTypeRegistries ?? []) {
+./cloudflare-worker/dist/index.js:7586:      this.compositeErrorRegistry.copyFrom(etr);
+./cloudflare-worker/dist/index.js:7655:            throw new Error(`@smithy/core/schema - ${name} in input must be a string as hostLabel.`);
+./cloudflare-worker/dist/index.js:7661:          throw new Error(`[${request.hostname}] is not a valid hostname.`);
+./cloudflare-worker/dist/index.js:7699:      compositeErrorRegistry: this.compositeErrorRegistry
+./cloudflare-worker/dist/index.js:7710:    throw new Error(`@smithy/core/protocols - ${this.constructor.name} getDefaultContentType() implementation missing.`);
+./cloudflare-worker/dist/index.js:7723:      throw new Error("@smithy/core - HttpProtocol: eventStreamMarshaller missing in serdeContext.");
+./cloudflare-worker/dist/index.js:7779:            throw new Error(`No value provided for input HTTP label: ${memberName}.`);
+./cloudflare-worker/dist/index.js:7896:      await this.handleError(operationSchema, context, response, dataObject, this.deserializeMetadata(response));
+./cloudflare-worker/dist/index.js:7897:      throw new Error("@smithy/core/protocols - HTTP Protocol error handler failed to throw.");
+./cloudflare-worker/dist/index.js:8148:            throw new Error(`@smithy/core/protocols - received non-Date value ${value} when schema expected Date in ${ns.getName(true)}`);
+./cloudflare-worker/dist/index.js:8353:// node_modules/@smithy/core/dist-es/submodules/retry/service-error-classification/constants.js
+./cloudflare-worker/dist/index.js:8354:var THROTTLING_ERROR_CODES = [
+./cloudflare-worker/dist/index.js:8370:var TRANSIENT_ERROR_CODES = ["TimeoutError", "RequestTimeout", "RequestTimeoutException"];
+./cloudflare-worker/dist/index.js:8371:var TRANSIENT_ERROR_STATUS_CODES = [500, 502, 503, 504];
+./cloudflare-worker/dist/index.js:8372:var NODEJS_TIMEOUT_ERROR_CODES = ["ECONNRESET", "ECONNREFUSED", "EPIPE", "ETIMEDOUT"];
+./cloudflare-worker/dist/index.js:8373:var NODEJS_NETWORK_ERROR_CODES = ["EHOSTUNREACH", "ENETUNREACH", "ENOTFOUND", "EAI_AGAIN"];
+./cloudflare-worker/dist/index.js:8375:// node_modules/@smithy/core/dist-es/submodules/retry/service-error-classification/service-error-classification.js
+./cloudflare-worker/dist/index.js:8376:var isRetryableByTrait = /* @__PURE__ */ __name((error) => error?.$retryable !== void 0, "isRetryableByTrait");
+./cloudflare-worker/dist/index.js:8377:var isClockSkewCorrectedError = /* @__PURE__ */ __name((error) => error.$metadata?.clockSkewCorrected, "isClockSkewCorrectedError");
+./cloudflare-worker/dist/index.js:8378:var isBrowserNetworkError = /* @__PURE__ */ __name((error) => {
+./cloudflare-worker/dist/index.js:8379:  const errorMessages = /* @__PURE__ */ new Set([
+./cloudflare-worker/dist/index.js:8381:    "NetworkError when attempting to fetch resource",
+./cloudflare-worker/dist/index.js:8386:  const isValid = error && error instanceof TypeError;
+./cloudflare-worker/dist/index.js:8390:  return errorMessages.has(error.message);
+./cloudflare-worker/dist/index.js:8391:}, "isBrowserNetworkError");
+./cloudflare-worker/dist/index.js:8392:var isThrottlingError = /* @__PURE__ */ __name((error) => error.$metadata?.httpStatusCode === 429 || THROTTLING_ERROR_CODES.includes(error.name) || error.$retryable?.throttling == true, "isThrottlingError");
+./cloudflare-worker/dist/index.js:8393:var isTransientError = /* @__PURE__ */ __name((error, depth = 0) => isRetryableByTrait(error) || isClockSkewCorrectedError(error) || error.name === "InvalidSignatureException" && error.message?.includes("Signature expired") || TRANSIENT_ERROR_CODES.includes(error.name) || NODEJS_TIMEOUT_ERROR_CODES.includes(error?.code || "") || NODEJS_NETWORK_ERROR_CODES.includes(error?.code || "") || TRANSIENT_ERROR_STATUS_CODES.includes(error.$metadata?.httpStatusCode || 0) || isBrowserNetworkError(error) || isNodeJsHttp2TransientError(error) || error.cause !== void 0 && depth <= 10 && isTransientError(error.cause, depth + 1), "isTransientError");
+./cloudflare-worker/dist/index.js:8394:var isServerError = /* @__PURE__ */ __name((error) => {
+./cloudflare-worker/dist/index.js:8395:  if (error.$metadata?.httpStatusCode !== void 0) {
+./cloudflare-worker/dist/index.js:8396:    const statusCode = error.$metadata.httpStatusCode;
+./cloudflare-worker/dist/index.js:8397:    if (500 <= statusCode && statusCode <= 599 && !isTransientError(error)) {
+./cloudflare-worker/dist/index.js:8403:}, "isServerError");
+./cloudflare-worker/dist/index.js:8404:function isNodeJsHttp2TransientError(error) {
+./cloudflare-worker/dist/index.js:8405:  return error.code === "ERR_HTTP2_STREAM_ERROR" && error.message.includes("NGHTTP2_REFUSED_STREAM");
+./cloudflare-worker/dist/index.js:8407:__name(isNodeJsHttp2TransientError, "isNodeJsHttp2TransientError");
+./cloudflare-worker/dist/index.js:8460:var asSdkError = /* @__PURE__ */ __name((error) => {
+./cloudflare-worker/dist/index.js:8461:  if (error instanceof Error)
+./cloudflare-worker/dist/index.js:8462:    return error;
+./cloudflare-worker/dist/index.js:8463:  if (error instanceof Object)
+./cloudflare-worker/dist/index.js:8464:    return Object.assign(new Error(), error);
+./cloudflare-worker/dist/index.js:8465:  if (typeof error === "string")
+./cloudflare-worker/dist/index.js:8466:    return new Error(error);
+./cloudflare-worker/dist/index.js:8467:  return new Error(`AWS SDK error wrapper for ${error}`);
+./cloudflare-worker/dist/index.js:8468:}, "asSdkError");
+./cloudflare-worker/dist/index.js:8478:      let lastError = new Error();
+./cloudflare-worker/dist/index.js:8497:          const retryErrorInfo = getRetryErrorInfo(e2, options.logger);
+./cloudflare-worker/dist/index.js:8498:          lastError = asSdkError(e2);
+./cloudflare-worker/dist/index.js:8500:            (context.logger instanceof NoOpLogger ? console : context.logger)?.warn("An error was encountered in a non-retryable streaming request.");
+./cloudflare-worker/dist/index.js:8501:            throw lastError;
+./cloudflare-worker/dist/index.js:8504:            retryToken = await retryStrategy.refreshRetryTokenForRetry(retryToken, retryErrorInfo);
+./cloudflare-worker/dist/index.js:8505:          } catch (ignoredRefreshError) {
+./cloudflare-worker/dist/index.js:8506:            if (!lastError.$metadata) {
+./cloudflare-worker/dist/index.js:8507:              lastError.$metadata = {};
+./cloudflare-worker/dist/index.js:8509:            lastError.$metadata.attempts = attempts + 1;
+./cloudflare-worker/dist/index.js:8510:            lastError.$metadata.totalRetryDelay = totalRetryDelay;
+./cloudflare-worker/dist/index.js:8511:            throw lastError;
+./cloudflare-worker/dist/index.js:8533:var getRetryErrorInfo = /* @__PURE__ */ __name((error, logger2) => {
+./cloudflare-worker/dist/index.js:8534:  const errorInfo = {
+./cloudflare-worker/dist/index.js:8535:    error,
+./cloudflare-worker/dist/index.js:8536:    errorType: getRetryErrorType(error)
+./cloudflare-worker/dist/index.js:8538:  const retryAfterHint = parseRetryAfterHeader(error.$response, logger2);
+./cloudflare-worker/dist/index.js:8540:    errorInfo.retryAfterHint = retryAfterHint;
+./cloudflare-worker/dist/index.js:8542:  return errorInfo;
+./cloudflare-worker/dist/index.js:8543:}, "getRetryErrorInfo");
+./cloudflare-worker/dist/index.js:8544:var getRetryErrorType = /* @__PURE__ */ __name((error) => {
+./cloudflare-worker/dist/index.js:8545:  if (isThrottlingError(error))
+./cloudflare-worker/dist/index.js:8547:  if (isTransientError(error))
+./cloudflare-worker/dist/index.js:8549:  if (isServerError(error))
+./cloudflare-worker/dist/index.js:8550:    return "SERVER_ERROR";
+./cloudflare-worker/dist/index.js:8551:  return "CLIENT_ERROR";
+./cloudflare-worker/dist/index.js:8552:}, "getRetryErrorType");
+./cloudflare-worker/dist/index.js:8609:    const retryErrorInfo = response;
+./cloudflare-worker/dist/index.js:8610:    const isThrottling = retryErrorInfo?.errorType === "THROTTLING" || isThrottlingError(retryErrorInfo?.error ?? response);
+./cloudflare-worker/dist/index.js:8797:  async refreshRetryTokenForRetry(token, errorInfo) {
+./cloudflare-worker/dist/index.js:8799:    const retryCode = this.retryCode(token, errorInfo, maxAttempts);
+./cloudflare-worker/dist/index.js:8803:      const errorType = errorInfo.errorType;
+./cloudflare-worker/dist/index.js:8804:      this.retryBackoffStrategy.setDelayBase(errorType === "THROTTLING" ? Retry.throttlingDelay() : this.baseDelay);
+./cloudflare-worker/dist/index.js:8805:      const delayFromErrorType = this.retryBackoffStrategy.computeNextBackoffDelay(token.getRetryCount());
+./cloudflare-worker/dist/index.js:8806:      let retryDelay = delayFromErrorType;
+./cloudflare-worker/dist/index.js:8807:      if (errorInfo.retryAfterHint instanceof Date) {
+./cloudflare-worker/dist/index.js:8808:        retryDelay = Math.max(delayFromErrorType, Math.min(errorInfo.retryAfterHint.getTime() - Date.now(), delayFromErrorType + 5e3));
+./cloudflare-worker/dist/index.js:8816:        const capacityCost = this.getCapacityCost(errorType);
+./cloudflare-worker/dist/index.js:8824:    throw new Error("No retry token available");
+./cloudflare-worker/dist/index.js:8843:  retryCode(tokenToRenew, errorInfo, maxAttempts) {
+./cloudflare-worker/dist/index.js:8845:    const retryableStatus = this.isRetryableError(errorInfo.errorType) ? 0 : refusal.incompatible;
+./cloudflare-worker/dist/index.js:8847:    const capacityStatus = this.capacity >= this.getCapacityCost(errorInfo.errorType) ? 0 : refusal.capacity;
+./cloudflare-worker/dist/index.js:8850:  getCapacityCost(errorType) {
+./cloudflare-worker/dist/index.js:8851:    return errorType === Retry.modifiedCostType() ? Retry.throttlingCost() : Retry.cost();
+./cloudflare-worker/dist/index.js:8853:  isRetryableError(errorType) {
+./cloudflare-worker/dist/index.js:8854:    return errorType === "THROTTLING" || errorType === "TRANSIENT";
+./cloudflare-worker/dist/index.js:8879:  async refreshRetryTokenForRetry(tokenToRenew, errorInfo) {
+./cloudflare-worker/dist/index.js:8880:    this.rateLimiter.updateClientSendingRate(errorInfo);
+./cloudflare-worker/dist/index.js:8881:    const token = await this.standardRetryStrategy.refreshRetryTokenForRetry(tokenToRenew, errorInfo);
+./cloudflare-worker/dist/index.js:8989:  } catch (error) {
+./cloudflare-worker/dist/index.js:8993:    logger2?.error?.({
+./cloudflare-worker/dist/index.js:8997:      error,
+./cloudflare-worker/dist/index.js:8998:      metadata: error.$metadata
+./cloudflare-worker/dist/index.js:9000:    throw error;
+./cloudflare-worker/dist/index.js:9084:    throw new Error(failureReasons.join("\n"));
+./cloudflare-worker/dist/index.js:9109:var defaultErrorHandler = /* @__PURE__ */ __name((signingProperties) => (error) => {
+./cloudflare-worker/dist/index.js:9110:  throw error;
+./cloudflare-worker/dist/index.js:9111:}, "defaultErrorHandler");
+./cloudflare-worker/dist/index.js:9121:    throw new Error(`No HttpAuthScheme was selected: unable to sign request`);
+./cloudflare-worker/dist/index.js:9127:  }).catch((signer.errorHandler || defaultErrorHandler)(signingProperties));
+./cloudflare-worker/dist/index.js:9565:    throw new Error("Provided region was not found in the partition array or regex, and default partition with id 'aws' doesn't exist.");
+./cloudflare-worker/dist/index.js:9890:      throw new Error(`Region not accepted: region="${region}" is not a valid hostname component.`);
+./cloudflare-worker/dist/index.js:9907:    throw new Error("Region is missing");
+./cloudflare-worker/dist/index.js:9944:      throw new Error(`Invalid parameter for "defaultsMode", expect ${DEFAULTS_MODE_OPTIONS.join(", ")}, got ${mode}`);
+./cloudflare-worker/dist/index.js:10193:      throw new Error(`The checksum algorithm "${checksumAlgorithm}" is not supported by the client. Select one of ${CLIENT_SUPPORTED_ALGORITHMS}, or provide an implementation to  the client constructor checksums field.`);
+./cloudflare-worker/dist/index.js:10298:    if (e2 instanceof Error && e2.name === "InvalidChunkSizeError") {
+./cloudflare-worker/dist/index.js:10395:      } catch (error) {
+./cloudflare-worker/dist/index.js:10397:          logger2?.warn(`Skipping ${ChecksumAlgorithm.CRC64NVME} checksum validation: ${error.message}`);
+./cloudflare-worker/dist/index.js:10400:        throw error;
+./cloudflare-worker/dist/index.js:10417:      throw new Error(`Checksum mismatch: expected "${checksum}" but received "${checksumFromResponse}" in response header "${responseHeader}".`);
+./cloudflare-worker/dist/index.js:10542:          throw new Error("Region was not restored following S3 region redirect.");
+./cloudflare-worker/dist/index.js:10577:              throw new Error("Region redirect failed: " + e2);
+./cloudflare-worker/dist/index.js:10699:    await this.cache.purgeExpired().catch((error) => {
+./cloudflare-worker/dist/index.js:10700:      console.warn("Error while clearing expired entries in S3ExpressIdentityCache: \n" + error);
+./cloudflare-worker/dist/index.js:10704:      throw new Error("s3#createSession response credential missing AccessKeyId or SecretAccessKey.");
+./cloudflare-worker/dist/index.js:10832:          throw new Error(`Invalid UUID received: ${header.value}`);
+./cloudflare-worker/dist/index.js:10863:      throw new Error("Int64 buffers must be exactly 8 bytes");
+./cloudflare-worker/dist/index.js:10868:      throw new Error(`${number} is too large (or, if negative, too small) to represent as an Int64`);
+./cloudflare-worker/dist/index.js:11042:      throw new Error("Resolved credential object is not valid");
+./cloudflare-worker/dist/index.js:11372:        throw new Error(`signWithCredentials with signingRegion '*' is only supported when using the CRT dependency @aws-sdk/signature-v4-crt. Please check whether you have installed the "@aws-sdk/signature-v4-crt" package explicitly. You must also register the package by calling [require("@aws-sdk/signature-v4-crt");] or an ESM equivalent such as [import "@aws-sdk/signature-v4-crt";]. For more information please go to https://github.com/aws/aws-sdk-js-v3#functionality-requiring-aws-common-runtime-crt`);
+./cloudflare-worker/dist/index.js:11384:        throw new Error(`presign with signingRegion '*' is only supported when using the CRT dependency @aws-sdk/signature-v4-crt. Please check whether you have installed the "@aws-sdk/signature-v4-crt" package explicitly. You must also register the package by calling [require("@aws-sdk/signature-v4-crt");] or an ESM equivalent such as [import "@aws-sdk/signature-v4-crt";]. For more information please go to https://github.com/aws/aws-sdk-js-v3#functionality-requiring-aws-common-runtime-crt`);
+./cloudflare-worker/dist/index.js:11391:      throw new Error("Method presignWithCredentials is not supported for [signingRegion=*].");
+./cloudflare-worker/dist/index.js:11401:          throw new Error("Neither CRT nor JS SigV4a implementation is available. Please load either @aws-sdk/signature-v4-crt or @aws-sdk/signature-v4a. For more information please go to https://github.com/aws/aws-sdk-js-v3#functionality-requiring-aws-common-runtime-crt");
+./cloudflare-worker/dist/index.js:11413:          throw new Error("Available SigV4a implementation is not a valid constructor. Please ensure you've properly imported @aws-sdk/signature-v4-crt or @aws-sdk/signature-v4a.For more information please go to https://github.com/aws/aws-sdk-js-v3#functionality-requiring-aws-common-runtime-crt");
+./cloudflare-worker/dist/index.js:11417:          throw new Error("JS SigV4a implementation is not available or not a valid constructor. Please check whether you have installed the @aws-sdk/signature-v4a package explicitly. The CRT implementation is not available for browsers. You must also register the package by calling [require('@aws-sdk/signature-v4a');] or an ESM equivalent such as [import '@aws-sdk/signature-v4a';]. For more information please go to https://github.com/aws/aws-sdk-js-v3#using-javascript-non-crt-implementation-of-sigv4a");
+./cloudflare-worker/dist/index.js:11478:    throw new Error("X-Amz-Security-Token must not be set for s3-express requests.");
+./cloudflare-worker/dist/index.js:11484:var defaultErrorHandler2 = /* @__PURE__ */ __name((signingProperties) => (error) => {
+./cloudflare-worker/dist/index.js:11485:  throw error;
+./cloudflare-worker/dist/index.js:11486:}, "defaultErrorHandler");
+./cloudflare-worker/dist/index.js:11496:    throw new Error(`No HttpAuthScheme was selected: unable to sign request`);
+./cloudflare-worker/dist/index.js:11508:  }).catch((signer.errorHandler || defaultErrorHandler2)(signingProperties));
+./cloudflare-worker/dist/index.js:11548:    const err = new Error("S3 aborted request");
+./cloudflare-worker/dist/index.js:11552:    err.name = "InternalError";
+./cloudflare-worker/dist/index.js:11556:  if (bodyStringTail && bodyStringTail.endsWith("</Error>")) {
+./cloudflare-worker/dist/index.js:11656:      const err = new Error(`Bucket name shouldn't contain '/', received '${Bucket}'`);
+./cloudflare-worker/dist/index.js:11684:  errorRegistry;
+./cloudflare-worker/dist/index.js:11715:  async getErrorSchemaOrThrowBaseException(errorIdentifier, defaultNamespace, response, dataObject, metadata, getErrorSchema) {
+./cloudflare-worker/dist/index.js:11716:    let errorName = errorIdentifier;
+./cloudflare-worker/dist/index.js:11717:    if (errorIdentifier.includes("#")) {
+./cloudflare-worker/dist/index.js:11718:      [, errorName] = errorIdentifier.split("#");
+./cloudflare-worker/dist/index.js:11720:    const errorMetadata = {
+./cloudflare-worker/dist/index.js:11724:    if (!this.errorRegistry) {
+./cloudflare-worker/dist/index.js:11725:      throw new Error("@aws-sdk/core/protocols - error handler not initialized.");
+./cloudflare-worker/dist/index.js:11728:      const errorSchema = getErrorSchema?.(this.errorRegistry, errorName) ?? this.errorRegistry.getSchema(errorIdentifier);
+./cloudflare-worker/dist/index.js:11729:      return { errorSchema, errorMetadata };
+./cloudflare-worker/dist/index.js:11731:      dataObject.message = dataObject.message ?? dataObject.Message ?? "UnknownError";
+./cloudflare-worker/dist/index.js:11732:      const synthetic = this.errorRegistry;
+./cloudflare-worker/dist/index.js:11735:        const ErrorCtor = synthetic.getErrorCtor(baseExceptionSchema) ?? Error;
+./cloudflare-worker/dist/index.js:11736:        throw this.decorateServiceException(Object.assign(new ErrorCtor({ name: errorName }), errorMetadata), dataObject);
+./cloudflare-worker/dist/index.js:11739:      const message2 = d2?.message ?? d2?.Message ?? d2?.Error?.Message ?? d2?.Error?.message;
+./cloudflare-worker/dist/index.js:11740:      throw this.decorateServiceException(Object.assign(new Error(message2), {
+./cloudflare-worker/dist/index.js:11741:        name: errorName
+./cloudflare-worker/dist/index.js:11742:      }, errorMetadata), dataObject);
+./cloudflare-worker/dist/index.js:11745:  compose(composite, errorIdentifier, defaultNamespace) {
+./cloudflare-worker/dist/index.js:11747:    if (errorIdentifier.includes("#")) {
+./cloudflare-worker/dist/index.js:11748:      [namespace] = errorIdentifier.split("#");
+./cloudflare-worker/dist/index.js:11754:    this.errorRegistry = composite;
+./cloudflare-worker/dist/index.js:11759:      const error = decorateServiceException(exception, additions);
+./cloudflare-worker/dist/index.js:11761:        error.message = msg;
+./cloudflare-worker/dist/index.js:11763:      const errorObj = error.Error ?? {};
+./cloudflare-worker/dist/index.js:11764:      errorObj.Type = error.Error?.Type;
+./cloudflare-worker/dist/index.js:11765:      errorObj.Code = error.Error?.Code;
+./cloudflare-worker/dist/index.js:11766:      errorObj.Message = error.Error?.message ?? error.Error?.Message ?? msg;
+./cloudflare-worker/dist/index.js:11767:      error.Error = errorObj;
+./cloudflare-worker/dist/index.js:11768:      const reqId = error.$metadata.requestId;
+./cloudflare-worker/dist/index.js:11770:        error.RequestId = reqId;
+./cloudflare-worker/dist/index.js:11772:      return error;
+./cloudflare-worker/dist/index.js:11776:  setQueryCompatError(output, response) {
+./cloudflare-worker/dist/index.js:11777:    const queryErrorHeader = response.headers?.["x-amzn-query-error"];
+./cloudflare-worker/dist/index.js:11778:    if (output !== void 0 && queryErrorHeader != null) {
+./cloudflare-worker/dist/index.js:11779:      const [Code, Type] = queryErrorHeader.split(";");
+./cloudflare-worker/dist/index.js:11781:      const Error2 = {
+./cloudflare-worker/dist/index.js:11789:        Error2[k2 === "message" ? "Message" : k2] = output[k2];
+./cloudflare-worker/dist/index.js:11791:      delete Error2.__type;
+./cloudflare-worker/dist/index.js:11792:      output.Error = Error2;
+./cloudflare-worker/dist/index.js:11795:  queryCompatOutput(queryCompatErrorData, errorData) {
+./cloudflare-worker/dist/index.js:11796:    if (queryCompatErrorData.Error) {
+./cloudflare-worker/dist/index.js:11797:      errorData.Error = queryCompatErrorData.Error;
+./cloudflare-worker/dist/index.js:11799:    if (queryCompatErrorData.Type) {
+./cloudflare-worker/dist/index.js:11800:      errorData.Type = queryCompatErrorData.Type;
+./cloudflare-worker/dist/index.js:11802:    if (queryCompatErrorData.Code) {
+./cloudflare-worker/dist/index.js:11803:      errorData.Code = queryCompatErrorData.Code;
+./cloudflare-worker/dist/index.js:11806:  findQueryCompatibleError(registry, errorName) {
+./cloudflare-worker/dist/index.js:11808:      return registry.getSchema(errorName);
+./cloudflare-worker/dist/index.js:11810:      return registry.find((schema) => NormalizedSchema.of(schema).getMergedTraits().awsQueryError?.[0] === errorName);
+./cloudflare-worker/dist/index.js:12006:  if (xmlDocument.getElementsByTagName("parsererror").length > 0) {
+./cloudflare-worker/dist/index.js:12007:    throw new Error("DOMParser XML parsing error.");
+./cloudflare-worker/dist/index.js:12169:      throw new Error(`@aws-sdk/core/protocols - xml deserializer unhandled schema type for ${ns.getName(true)}`);
+./cloudflare-worker/dist/index.js:12209:var loadRestXmlErrorCode = /* @__PURE__ */ __name((output, data) => {
+./cloudflare-worker/dist/index.js:12210:  if (data?.Error?.Code !== void 0) {
+./cloudflare-worker/dist/index.js:12211:    return data.Error.Code;
+./cloudflare-worker/dist/index.js:12219:}, "loadRestXmlErrorCode");
+./cloudflare-worker/dist/index.js:12275:      throw new Error(`@aws-sdk/core/protocols - xml serializer, cannot write struct with empty name or non-struct, schema=${ns.getName(true)}.`);
+./cloudflare-worker/dist/index.js:12307:          throw new Error(`@aws-sdk - $unknown union member in XML requires value of type string, @aws-sdk/xml-builder::XmlNode or XmlText.`);
+./cloudflare-worker/dist/index.js:12320:      throw new Error(`@aws-sdk/core/protocols - xml serializer, cannot write non-member list: ${listMember.getName(true)}`);
+./cloudflare-worker/dist/index.js:12363:      throw new Error(`@aws-sdk/core/protocols - xml serializer, cannot write non-member map: ${mapMember.getName(true)}`);
+./cloudflare-worker/dist/index.js:12424:      throw new Error("@aws-sdk/core/protocols - (XML serializer) cannot write null value.");
+./cloudflare-worker/dist/index.js:12454:        throw new Error("@aws-sdk/core/protocols - xml serializer, cannot call _write() on List/Map schema, call writeList or writeMap() instead.");
+./cloudflare-worker/dist/index.js:12456:        throw new Error(`@aws-sdk/core/protocols - xml serializer, unhandled schema type for object value and schema: ${ns.getName(true)}`);
+./cloudflare-worker/dist/index.js:12470:      throw new Error(`Unhandled schema-value pair ${ns.getName(true)}=${value}`);
+./cloudflare-worker/dist/index.js:12563:  async handleError(operationSchema, context, response, dataObject, metadata) {
+./cloudflare-worker/dist/index.js:12564:    const errorIdentifier = loadRestXmlErrorCode(response, dataObject) ?? "Unknown";
+./cloudflare-worker/dist/index.js:12565:    this.mixin.compose(this.compositeErrorRegistry, errorIdentifier, this.options.defaultNamespace);
+./cloudflare-worker/dist/index.js:12566:    if (dataObject.Error && typeof dataObject.Error === "object") {
+./cloudflare-worker/dist/index.js:12567:      for (const key of Object.keys(dataObject.Error)) {
+./cloudflare-worker/dist/index.js:12568:        dataObject[key] = dataObject.Error[key];
+./cloudflare-worker/dist/index.js:12570:          dataObject.message = dataObject.Error[key];
+./cloudflare-worker/dist/index.js:12577:    const { errorSchema, errorMetadata } = await this.mixin.getErrorSchemaOrThrowBaseException(errorIdentifier, this.options.defaultNamespace, response, dataObject, metadata);
+./cloudflare-worker/dist/index.js:12578:    const ns = NormalizedSchema.of(errorSchema);
+./cloudflare-worker/dist/index.js:12579:    const message2 = dataObject.Error?.message ?? dataObject.Error?.Message ?? dataObject.message ?? dataObject.Message ?? "UnknownError";
+./cloudflare-worker/dist/index.js:12580:    const ErrorCtor = this.compositeErrorRegistry.getErrorCtor(errorSchema) ?? Error;
+./cloudflare-worker/dist/index.js:12581:    const exception = new ErrorCtor({});
+./cloudflare-worker/dist/index.js:12582:    await this.deserializeHttpMessage(errorSchema, context, response, dataObject);
+./cloudflare-worker/dist/index.js:12584:    const errorDeserializer = this.codec.createDeserializer();
+./cloudflare-worker/dist/index.js:12587:      const value = dataObject.Error?.[target] ?? dataObject[target];
+./cloudflare-worker/dist/index.js:12588:      output[name] = errorDeserializer.readSchema(member2, value);
+./cloudflare-worker/dist/index.js:12590:    throw this.mixin.decorateServiceException(Object.assign(exception, errorMetadata, {
+./cloudflare-worker/dist/index.js:12591:      $fault: ns.getMergedTraits().error,
+./cloudflare-worker/dist/index.js:12627:            throw new Error(`No value provided for input HTTP label: Bucket.`);
+./cloudflare-worker/dist/index.js:12767:var throwSigningPropertyError = /* @__PURE__ */ __name((name, property) => {
+./cloudflare-worker/dist/index.js:12769:    throw new Error(`Property \`${name}\` is not resolved for AWS SDK SigV4Auth`);
+./cloudflare-worker/dist/index.js:12772:}, "throwSigningPropertyError");
+./cloudflare-worker/dist/index.js:12774:  const context = throwSigningPropertyError("context", signingProperties.context);
+./cloudflare-worker/dist/index.js:12775:  const config = throwSigningPropertyError("config", signingProperties.config);
+./cloudflare-worker/dist/index.js:12777:  const signerFunction = throwSigningPropertyError("signer", config.signer);
+./cloudflare-worker/dist/index.js:12796:      throw new Error("The request is not an instance of `HttpRequest` and cannot be signed");
+./cloudflare-worker/dist/index.js:12822:  errorHandler(signingProperties) {
+./cloudflare-worker/dist/index.js:12823:    return (error) => {
+./cloudflare-worker/dist/index.js:12824:      const errorException = error;
+./cloudflare-worker/dist/index.js:12826:        const serverTime = errorException.ServerTime ?? getDateHeader(errorException.$response);
+./cloudflare-worker/dist/index.js:12828:          const config = throwSigningPropertyError("config", signingProperties.config);
+./cloudflare-worker/dist/index.js:12831:          const ageHeader = getAgeHeader(errorException.$response);
+./cloudflare-worker/dist/index.js:12837:          if (skewExceedsThreshold && (isLocalCorrection || isConcurrentCorrection) && errorException.$metadata) {
+./cloudflare-worker/dist/index.js:12838:            errorException.$metadata.clockSkewCorrected = true;
+./cloudflare-worker/dist/index.js:12842:      throw error;
+./cloudflare-worker/dist/index.js:12851:      const config = throwSigningPropertyError("config", signingProperties.config);
+./cloudflare-worker/dist/index.js:12866:      throw new Error("The request is not an instance of `HttpRequest` and cannot be signed");
+./cloudflare-worker/dist/index.js:13005:        throw new Error("@aws-sdk/core::resolveAwsSdkSigV4Config - `credentials` not provided and no credentialDefaultProvider was configured.");
+./cloudflare-worker/dist/index.js:15011:    throw new Error("Could not find `input` for `defaultEndpointRuleSetHttpAuthSchemeParametersProvider`");
+./cloudflare-worker/dist/index.js:15016:    throw new Error(`getEndpointParameterInstructions() is not defined on '${context.commandName}'`);
+./cloudflare-worker/dist/index.js:15025:      throw new Error("expected `region` to be configured for `aws.auth#sigv4`");
+./cloudflare-worker/dist/index.js:15089:        throw new Error(`Unknown HttpAuthScheme found in '@smithy.rules#endpointRuleSet': '${name}'`);
+./cloudflare-worker/dist/index.js:15093:        throw new Error(`Could not find HttpAuthOption create function for '${schemeId}'`);
+./cloudflare-worker/dist/index.js:15201:// node_modules/@aws-sdk/client-s3/dist-es/models/errors.js
+./cloudflare-worker/dist/index.js:15232:var ObjectNotInActiveTierError = class _ObjectNotInActiveTierError extends S3ServiceException {
+./cloudflare-worker/dist/index.js:15234:    __name(this, "ObjectNotInActiveTierError");
+./cloudflare-worker/dist/index.js:15236:  name = "ObjectNotInActiveTierError";
+./cloudflare-worker/dist/index.js:15240:      name: "ObjectNotInActiveTierError",
+./cloudflare-worker/dist/index.js:15244:    Object.setPrototypeOf(this, _ObjectNotInActiveTierError.prototype);
+./cloudflare-worker/dist/index.js:15506:var ObjectAlreadyInActiveTierError = class _ObjectAlreadyInActiveTierError extends S3ServiceException {
+./cloudflare-worker/dist/index.js:15508:    __name(this, "ObjectAlreadyInActiveTierError");
+./cloudflare-worker/dist/index.js:15510:  name = "ObjectAlreadyInActiveTierError";
+./cloudflare-worker/dist/index.js:15514:      name: "ObjectAlreadyInActiveTierError",
+./cloudflare-worker/dist/index.js:15518:    Object.setPrototypeOf(this, _ObjectAlreadyInActiveTierError.prototype);
+./cloudflare-worker/dist/index.js:15757:var _E = "Error";
+./cloudflare-worker/dist/index.js:15762:var _ECr = "ErrorCode";
+./cloudflare-worker/dist/index.js:15763:var _ED = "ErrorDetails";
+./cloudflare-worker/dist/index.js:15764:var _EDr = "ErrorDocument";
+./cloudflare-worker/dist/index.js:15768:var _EM = "ErrorMessage";
+./cloudflare-worker/dist/index.js:15783:var _Er = "Errors";
+./cloudflare-worker/dist/index.js:15913:var _HECRE = "HttpErrorCodeReturnedEquals";
+./cloudflare-worker/dist/index.js:16098:var _OAIATE = "ObjectAlreadyInActiveTierError";
+./cloudflare-worker/dist/index.js:16118:var _ONIATE = "ObjectNotInActiveTierError";
+./cloudflare-worker/dist/index.js:16408:var _e = "error";
+./cloudflare-worker/dist/index.js:16415:var _hE = "httpError";
+./cloudflare-worker/dist/index.js:16495:var _xafec = "x-amz-fwd-error-code";
+./cloudflare-worker/dist/index.js:16496:var _xafem = "x-amz-fwd-error-message";
+./cloudflare-worker/dist/index.js:16596:_s_registry.registerError(S3ServiceException$, S3ServiceException);
+./cloudflare-worker/dist/index.js:16606:n0_registry.registerError(AccessDenied$, AccessDenied);
+./cloudflare-worker/dist/index.js:16615:n0_registry.registerError(AnnotationLimitExceeded$, AnnotationLimitExceeded);
+./cloudflare-worker/dist/index.js:16624:n0_registry.registerError(AnnotationNameTooLong$, AnnotationNameTooLong);
+./cloudflare-worker/dist/index.js:16633:n0_registry.registerError(BucketAlreadyExists$, BucketAlreadyExists);
+./cloudflare-worker/dist/index.js:16642:n0_registry.registerError(BucketAlreadyOwnedByYou$, BucketAlreadyOwnedByYou);
+./cloudflare-worker/dist/index.js:16651:n0_registry.registerError(EncryptionTypeMismatch$, EncryptionTypeMismatch);
+./cloudflare-worker/dist/index.js:16660:n0_registry.registerError(IdempotencyParameterMismatch$, IdempotencyParameterMismatch);
+./cloudflare-worker/dist/index.js:16669:n0_registry.registerError(InvalidAnnotationName$, InvalidAnnotationName);
+./cloudflare-worker/dist/index.js:16678:n0_registry.registerError(InvalidObjectState$, InvalidObjectState);
+./cloudflare-worker/dist/index.js:16687:n0_registry.registerError(InvalidPrefix$, InvalidPrefix);
+./cloudflare-worker/dist/index.js:16696:n0_registry.registerError(InvalidRequest$, InvalidRequest);
+./cloudflare-worker/dist/index.js:16705:n0_registry.registerError(InvalidWriteOffset$, InvalidWriteOffset);
+./cloudflare-worker/dist/index.js:16714:n0_registry.registerError(NoSuchAnnotation$, NoSuchAnnotation);
+./cloudflare-worker/dist/index.js:16723:n0_registry.registerError(NoSuchBucket$, NoSuchBucket);
+./cloudflare-worker/dist/index.js:16732:n0_registry.registerError(NoSuchKey$, NoSuchKey);
+./cloudflare-worker/dist/index.js:16741:n0_registry.registerError(NoSuchUpload$, NoSuchUpload);
+./cloudflare-worker/dist/index.js:16750:n0_registry.registerError(NotFound$, NotFound);
+./cloudflare-worker/dist/index.js:16751:var ObjectAlreadyInActiveTierError$ = [
+./cloudflare-worker/dist/index.js:16759:n0_registry.registerError(ObjectAlreadyInActiveTierError$, ObjectAlreadyInActiveTierError);
+./cloudflare-worker/dist/index.js:16760:var ObjectNotInActiveTierError$ = [
+./cloudflare-worker/dist/index.js:16768:n0_registry.registerError(ObjectNotInActiveTierError$, ObjectNotInActiveTierError);
+./cloudflare-worker/dist/index.js:16777:n0_registry.registerError(TooManyParts$, TooManyParts);
+./cloudflare-worker/dist/index.js:16786:n0_registry.registerError(UnsupportedMediaType$, UnsupportedMediaType);
+./cloudflare-worker/dist/index.js:16787:var errorTypeRegistries = [
+./cloudflare-worker/dist/index.js:16915:  [0, 0, () => ErrorDetails$, 0, 0, 0],
+./cloudflare-worker/dist/index.js:17394:  [[() => DeletedObjects, { [_xF]: 1 }], [0, { [_hH]: _xarc }], [() => Errors, { [_xF]: 1, [_xN]: _E }]]
+./cloudflare-worker/dist/index.js:17473:var _Error$ = [
+./cloudflare-worker/dist/index.js:17481:var ErrorDetails$ = [
+./cloudflare-worker/dist/index.js:17489:var ErrorDocument$ = [
+./cloudflare-worker/dist/index.js:17759:  [() => MetadataTableConfigurationResult$, 0, () => ErrorDetails$],
+./cloudflare-worker/dist/index.js:17914:  [() => RedirectAllRequestsTo$, () => IndexDocument$, () => ErrorDocument$, [() => RoutingRules, 0]]
+./cloudflare-worker/dist/index.js:18282:  [0, 0, () => ErrorDetails$, 0, 0],
+./cloudflare-worker/dist/index.js:18309:  [0, 0, () => RecordExpiration$, () => ErrorDetails$, 0],
+./cloudflare-worker/dist/index.js:19706:  [() => ErrorDocument$, () => IndexDocument$, () => RedirectAllRequestsTo$, [() => RoutingRules, 0]]
+./cloudflare-worker/dist/index.js:19800:var Errors = [
+./cloudflare-worker/dist/index.js:19805:  () => _Error$
+./cloudflare-worker/dist/index.js:21082:        const timeoutError = new Error(`Request did not complete within ${timeoutInMs} ms`);
+./cloudflare-worker/dist/index.js:21083:        timeoutError.name = "TimeoutError";
+./cloudflare-worker/dist/index.js:21084:        reject(timeoutError);
+./cloudflare-worker/dist/index.js:21128:      const abortError = buildAbortError(abortSignal);
+./cloudflare-worker/dist/index.js:21129:      return Promise.reject(abortError);
+./cloudflare-worker/dist/index.js:21204:          const abortError = buildAbortError(abortSignal);
+./cloudflare-worker/dist/index.js:21205:          reject(abortError);
+./cloudflare-worker/dist/index.js:21229:function buildAbortError(abortSignal) {
+./cloudflare-worker/dist/index.js:21232:    if (reason instanceof Error) {
+./cloudflare-worker/dist/index.js:21233:      const abortError3 = new Error("Request aborted");
+./cloudflare-worker/dist/index.js:21234:      abortError3.name = "AbortError";
+./cloudflare-worker/dist/index.js:21235:      abortError3.cause = reason;
+./cloudflare-worker/dist/index.js:21236:      return abortError3;
+./cloudflare-worker/dist/index.js:21238:    const abortError2 = new Error(String(reason));
+./cloudflare-worker/dist/index.js:21239:    abortError2.name = "AbortError";
+./cloudflare-worker/dist/index.js:21240:    return abortError2;
+./cloudflare-worker/dist/index.js:21242:  const abortError = new Error("Request aborted");
+./cloudflare-worker/dist/index.js:21243:  abortError.name = "AbortError";
+./cloudflare-worker/dist/index.js:21244:  return abortError;
+./cloudflare-worker/dist/index.js:21246:__name(buildAbortError, "buildAbortError");
+./cloudflare-worker/dist/index.js:21286:      throw new Error("Attempted to update an already finished HMAC.");
+./cloudflare-worker/dist/index.js:21318:        throw new Error("Attempted to digest an already finished HMAC.");
+./cloudflare-worker/dist/index.js:21451:      errorTypeRegistries,
+./cloudflare-worker/dist/index.js:21480:    credentialDefaultProvider: config?.credentialDefaultProvider ?? ((_) => () => Promise.reject(new Error("Credential is missing"))),
+./cloudflare-worker/dist/index.js:21697:      throw new Error("Request to be presigned is not an valid HTTP request.");
+./cloudflare-worker/dist/index.js:21788:    throw new TypeError("The input to be decoded is not correctly encoded.");
+./cloudflare-worker/dist/index.js:21792:// node_modules/jose/dist/browser/util/errors.js
+./cloudflare-worker/dist/index.js:21793:var JOSEError = class extends Error {
+./cloudflare-worker/dist/index.js:21795:    __name(this, "JOSEError");
+./cloudflare-worker/dist/index.js:21801:    Error.captureStackTrace?.(this, this.constructor);
+./cloudflare-worker/dist/index.js:21804:JOSEError.code = "ERR_JOSE_GENERIC";
+./cloudflare-worker/dist/index.js:21805:var JWTClaimValidationFailed = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21818:var JWTExpired = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21831:var JOSEAlgNotAllowed = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21841:var JOSENotSupported = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21851:var JWEDecryptionFailed = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21861:var JWEInvalid = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21871:var JWSInvalid = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21881:var JWTInvalid = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21891:var JWKInvalid = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21901:var JWKSInvalid = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21911:var JWKSNoMatchingKey = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21921:var JWKSMultipleMatchingKeys = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21931:var JWKSTimeout = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21941:var JWSSignatureVerificationFailed = class extends JOSEError {
+./cloudflare-worker/dist/index.js:21954:  return new TypeError(`CryptoKey does not support this operation, its ${prop} must be ${name}`);
+./cloudflare-worker/dist/index.js:21974:      throw new Error("unreachable");
+./cloudflare-worker/dist/index.js:21989:    throw new TypeError(msg);
+./cloudflare-worker/dist/index.js:22051:      throw new TypeError("CryptoKey does not support this operation");
+./cloudflare-worker/dist/index.js:22146:      throw new TypeError(`${alg} requires key modulusLength to be 2048 bits or larger`);
+./cloudflare-worker/dist/index.js:22259:    throw new TypeError('"alg" argument is required when "jwk.alg" is not present');
+./cloudflare-worker/dist/index.js:22443:    throw new TypeError('"pkcs8" must be PKCS#8 formatted string');
+./cloudflare-worker/dist/index.js:22450:    throw new TypeError("JWK must be an object");
+./cloudflare-worker/dist/index.js:22456:        throw new TypeError('missing "k" (Key Value) Parameter value');
+./cloudflare-worker/dist/index.js:22476:    throw new TypeError("Invalid key for this operation, when present its use must be sig");
+./cloudflare-worker/dist/index.js:22479:    throw new TypeError(`Invalid key for this operation, when present its key_ops must include ${usage}`);
+./cloudflare-worker/dist/index.js:22482:    throw new TypeError(`Invalid key for this operation, when present its alg must be ${alg}`);
+./cloudflare-worker/dist/index.js:22492:    throw new TypeError(`JSON Web Key for symmetric algorithms must have JWK "kty" (Key Type) equal to "oct" and the JWK "k" (Key Value) present`);
+./cloudflare-worker/dist/index.js:22495:    throw new TypeError(withAlg(alg, key, ...types, "Uint8Array", allowJwk ? "JSON Web Key" : null));
+./cloudflare-worker/dist/index.js:22498:    throw new TypeError(`${tag(key)} instances for symmetric algorithms must be of type "secret"`);
+./cloudflare-worker/dist/index.js:22507:        throw new TypeError(`JSON Web Key for this operation be a private JWK`);
+./cloudflare-worker/dist/index.js:22511:        throw new TypeError(`JSON Web Key for this operation be a public JWK`);
+./cloudflare-worker/dist/index.js:22515:    throw new TypeError(withAlg(alg, key, ...types, allowJwk ? "JSON Web Key" : null));
+./cloudflare-worker/dist/index.js:22518:    throw new TypeError(`${tag(key)} instances for asymmetric algorithms must not be of type "secret"`);
+./cloudflare-worker/dist/index.js:22521:    throw new TypeError(`${tag(key)} instances for asymmetric algorithm signing must be of type "private"`);
+./cloudflare-worker/dist/index.js:22524:    throw new TypeError(`${tag(key)} instances for asymmetric algorithm decryption must be of type "private"`);
+./cloudflare-worker/dist/index.js:22527:    throw new TypeError(`${tag(key)} instances for asymmetric algorithm verifying must be of type "public"`);
+./cloudflare-worker/dist/index.js:22530:    throw new TypeError(`${tag(key)} instances for asymmetric algorithm encryption must be of type "public"`);
+./cloudflare-worker/dist/index.js:22581:    throw new TypeError(`"${option}" option must be an array of strings`);
+./cloudflare-worker/dist/index.js:22634:      throw new TypeError(invalid_key_input_default(key, ...types));
+./cloudflare-worker/dist/index.js:22638:  throw new TypeError(invalid_key_input_default(key, ...types, "Uint8Array", "JSON Web Key"));
+./cloudflare-worker/dist/index.js:22796:    throw new TypeError("Invalid time period format");
+./cloudflare-worker/dist/index.js:22903:      throw new TypeError("Invalid clockTolerance option type");
+./cloudflare-worker/dist/index.js:22970:      throw new TypeError("payload must be an instance of Uint8Array");
+./cloudflare-worker/dist/index.js:22976:      throw new TypeError("setProtectedHeader can only be called once");
+./cloudflare-worker/dist/index.js:22983:      throw new TypeError("setUnprotectedHeader can only be called once");
+./cloudflare-worker/dist/index.js:23056:      throw new TypeError("use the flattened module for creating JWS with b64: false");
+./cloudflare-worker/dist/index.js:23065:    throw new TypeError(`Invalid ${label} input`);
+./cloudflare-worker/dist/index.js:23076:      throw new TypeError("JWT Claims Set MUST be an object");
+./cloudflare-worker/dist/index.js:23239:      const error = new JWKSMultipleMatchingKeys();
+./cloudflare-worker/dist/index.js:23241:      error[Symbol.asyncIterator] = async function* () {
+./cloudflare-worker/dist/index.js:23249:      throw error;
+./cloudflare-worker/dist/index.js:23305:    throw new JOSEError("Expected 200 OK from the JSON Web Key Set HTTP response");
+./cloudflare-worker/dist/index.js:23310:    throw new JOSEError("Failed to parse the JSON Web Key Set HTTP response as JSON");
+./cloudflare-worker/dist/index.js:23346:      throw new TypeError("url must be an instance of URL");
+./cloudflare-worker/dist/index.js:23475:      throw new Error("Failed to obtain Google access token: " + JSON.stringify(data));
+./cloudflare-worker/dist/index.js:23512:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/dist/index.js:23526:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/dist/index.js:23538:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/dist/index.js:23550:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/dist/index.js:23562:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/dist/index.js:23574:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/dist/index.js:23586:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/dist/index.js:23597:      throw new Error(data.error?.message || "Delete failed");
+./cloudflare-worker/dist/index.js:23657:  if (typeof value !== "string") throw new Error("Email is required.");
+./cloudflare-worker/dist/index.js:23659:  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Enter a valid email address.");
+./cloudflare-worker/dist/index.js:23664:  if (typeof password !== "string" || password.length < 8) throw new Error("Use a password with at least 8 characters.");
+./cloudflare-worker/dist/index.js:23740:    console.error("JWT Verification error:", err);
+./cloudflare-worker/dist/index.js:23756:    return c2.json({ error: "Missing or invalid Authorization header" }, 401);
+./cloudflare-worker/dist/index.js:23760:  if (!payload || payload.admin !== true) return c2.json({ error: "Unauthorized. Admin access required." }, 403);
+./cloudflare-worker/dist/index.js:23780:  if (!filename || !contentType) return c2.json({ error: "Missing filename or contentType" }, 400);
+./cloudflare-worker/dist/index.js:23782:  if (!allowedCategories.includes(category)) return c2.json({ error: "Invalid category" }, 400);
+./cloudflare-worker/dist/index.js:23797:    return c2.json({ error: "Failed to generate upload URL" }, 500);
+./cloudflare-worker/dist/index.js:23802:  if (!objectKey || objectKey.includes("..")) return c2.json({ error: "Invalid object key" }, 400);
+./cloudflare-worker/dist/index.js:23812:    return c2.json({ error: "Failed to delete object" }, 500);
+./cloudflare-worker/dist/index.js:23817:  if (filename.includes("/") || filename.includes("\\") || filename.includes("..")) return c2.json({ error: "Invalid filename" }, 400);
+./cloudflare-worker/dist/index.js:23831:    return c2.json({ error: "Failed to fetch document" }, 500);
+./cloudflare-worker/dist/index.js:23837:  if (filename.includes("/") || filename.includes("\\") || filename.includes("..")) return c2.json({ error: "Invalid filename" }, 400);
+./cloudflare-worker/dist/index.js:23839:  if (!allowedCategories.includes(category)) return c2.json({ error: "Invalid category" }, 400);
+./cloudflare-worker/dist/index.js:23854:    return c2.json({ error: "Failed to fetch asset" }, 500);
+./cloudflare-worker/dist/index.js:23875:      return c2.json({ ok: false, error: "Unauthorized: Missing or invalid Authorization header" }, 401);
+./cloudflare-worker/dist/index.js:23882:      return c2.json({ ok: false, error: "Unauthorized: Token verification failed" }, 401);
+./cloudflare-worker/dist/index.js:23893:      return c2.json({ ok: false, error: "Unauthorized: Invalid or unauthorized UID" }, 403);
+./cloudflare-worker/dist/index.js:23914:    return c2.json({ ok: false, error: "Internal Server Error" }, 500);
+./cloudflare-worker/dist/index.js:23944:  const [totalProducts, totalOrders, totalFiles, totalApps, activeErrors] = await Promise.all([
+./cloudflare-worker/dist/index.js:23949:    fb.runQuery("errors", [{ fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "open" } } }])
+./cloudflare-worker/dist/index.js:23951:  return c2.json({ data: { totalUsers, totalProducts, totalOrders, totalFiles, totalApps, activeErrors } });
+./cloudflare-worker/dist/index.js:23956:  if (typeof uid !== "string" || !uid) return c2.json({ error: "UID is required." }, 400);
+./cloudflare-worker/dist/index.js:23957:  if (uid === c2.get("user").user_id) return c2.json({ error: "Cannot disable your own account." }, 400);
+./cloudflare-worker/dist/index.js:23966:  if (typeof uid !== "string" || !uid) return c2.json({ error: "UID is required." }, 400);
+./cloudflare-worker/dist/index.js:23985:    return c2.json({ error: `Please wait ${cooldownSeconds} seconds before requesting another code.` }, 429);
+./cloudflare-worker/dist/index.js:24009:    return c2.json({ error: "Could not send email." }, 500);
+./cloudflare-worker/dist/index.js:24015:  if (typeof code !== "string" || !/^\d{6}$/.test(code)) throw new Error("Enter the 6-digit verification code.");
+./cloudflare-worker/dist/index.js:24019:  if (!record) throw new Error("No active code was found. Request a new code.");
+./cloudflare-worker/dist/index.js:24023:    throw new Error("This code has expired. Request a new one.");
+./cloudflare-worker/dist/index.js:24027:    throw new Error("Too many incorrect attempts. Request a new code.");
+./cloudflare-worker/dist/index.js:24034:    throw new Error(`Incorrect code. ${MAX_ATTEMPTS - attempts} attempts remaining.`);
+./cloudflare-worker/dist/index.js:24046:    if (existing) return c2.json({ error: "An account already exists for this email. Please log in." }, 400);
+./cloudflare-worker/dist/index.js:24049:    return c2.json({ error: e2.message }, 400);
+./cloudflare-worker/dist/index.js:24064:    return c2.json({ error: e2.message }, 400);
+./cloudflare-worker/dist/index.js:24077:    return c2.json({ error: e2.message }, 400);
+./cloudflare-worker/dist/index.js:24092:    return c2.json({ error: e2.message }, 400);
+./cloudflare-worker/dist/index.js:24135:    if (!email || !message) return c2.json({ error: "Email and message are required" }, 400);
+./cloudflare-worker/dist/index.js:24148:    return c2.json({ error: err.message }, 500);
+./cloudflare-worker/dist/index.js:24158:    if (!orderId || !newStatus) return c2.json({ error: "Missing orderId or newStatus" }, 400);
+./cloudflare-worker/dist/index.js:24162:    if (!order) return c2.json({ error: "Order not found" }, 404);
+./cloudflare-worker/dist/index.js:24182:            return c2.json({ error: `Insufficient stock for ${product.name || item.productId}` }, 400);
+./cloudflare-worker/dist/index.js:24221:    console.error(err);
+./cloudflare-worker/dist/index.js:24222:    return c2.json({ error: err.message }, 500);
+./cloudflare-worker/dist/index.js:24226:app.onError((err, c2) => {
+./cloudflare-worker/dist/index.js:24227:  console.error("Internal Server Error:", err);
+./cloudflare-worker/dist/index.js:24228:  return c2.json({ error: "Internal Server Error", message: "An internal system error occurred" }, 500);
+./cloudflare-worker/src/firebase-rest.js:39:      throw new Error('Failed to obtain Google access token: ' + JSON.stringify(data));
+./cloudflare-worker/src/firebase-rest.js:80:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/src/firebase-rest.js:97:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/src/firebase-rest.js:111:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/src/firebase-rest.js:124:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/src/firebase-rest.js:137:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/src/firebase-rest.js:150:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/src/firebase-rest.js:163:    if (data.error) throw new Error(data.error.message);
+./cloudflare-worker/src/firebase-rest.js:175:      throw new Error(data.error?.message || 'Delete failed');
+./cloudflare-worker/src/index.js:38:    console.error('JWT Verification error:', err);
+./cloudflare-worker/src/index.js:54:    return c.json({ error: 'Missing or invalid Authorization header' }, 401);
+./cloudflare-worker/src/index.js:58:  if (!payload) return c.json({ error: 'Unauthorized' }, 401);
+./cloudflare-worker/src/index.js:67:    return c.json({ error: 'Missing or invalid Authorization header' }, 401);
+./cloudflare-worker/src/index.js:73:    return c.json({ error: 'Unauthorized. Token verification failed.' }, 401);
+./cloudflare-worker/src/index.js:77:    return c.json({ error: 'Unauthorized. Admin access required.' }, 403);
+./cloudflare-worker/src/index.js:114:    console.error(err.stack); // log internally
+./cloudflare-worker/src/index.js:115:    return c.json({ ok: false, error: err.message }, 500);
+./cloudflare-worker/src/index.js:122:    if (!filename || !contentType) return c.json({ error: 'Missing filename or contentType' }, 400);
+./cloudflare-worker/src/index.js:124:    if (!allowedCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400);
+./cloudflare-worker/src/index.js:146:    console.error('[UPLOAD ERROR]', err.name, err.message, err.stack);
+./cloudflare-worker/src/index.js:157:  if (!objectKey || objectKey.includes('..')) return c.json({ error: 'Invalid object key' }, 400);
+./cloudflare-worker/src/index.js:169:    return c.json({ error: 'Failed to delete object' }, 500);
+./cloudflare-worker/src/index.js:193:    return c.json({ error: err.message, stack: err.stack }, 500);
+./cloudflare-worker/src/index.js:199:  if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) return c.json({ error: 'Invalid filename' }, 400);
+./cloudflare-worker/src/index.js:215:    return c.json({ error: 'Failed to fetch document' }, 500);
+./cloudflare-worker/src/index.js:223:  if (filename.includes('/') || filename.includes('\\') || filename.includes('..')) return c.json({ error: 'Invalid filename' }, 400);
+./cloudflare-worker/src/index.js:226:  if (!allowedCategories.includes(category)) return c.json({ error: 'Invalid category' }, 400);
+./cloudflare-worker/src/index.js:243:    return c.json({ error: 'Failed to fetch asset' }, 500);
+./cloudflare-worker/src/index.js:253:    if (!email || !message) return c.json({ error: "Email and message are required" }, 400);
+./cloudflare-worker/src/index.js:283:    console.error('Contact form error:', err);
+./cloudflare-worker/src/index.js:284:    return c.json({ error: 'Internal Server Error' }, 500);
+./cloudflare-worker/src/index.js:304:      return c.json({ ok: false, error: 'Unauthorized: Missing or invalid Authorization header' }, 401);
+./cloudflare-worker/src/index.js:311:      return c.json({ ok: false, error: 'Unauthorized: Token verification failed' }, 401);
+./cloudflare-worker/src/index.js:325:      return c.json({ ok: false, error: 'Unauthorized: Invalid or unauthorized UID' }, 403);
+./cloudflare-worker/src/index.js:347:    return c.json({ ok: false, error: 'Internal Server Error' }, 500);
+./cloudflare-worker/src/index.js:381:  const [totalProducts, totalOrders, totalFiles, totalApps, activeErrors] = await Promise.all([
+./cloudflare-worker/src/index.js:386:    fb.runQuery("errors", [{ fieldFilter: { field: { fieldPath: "status" }, op: "EQUAL", value: { stringValue: "open" } } }])
+./cloudflare-worker/src/index.js:389:  return c.json({ data: { totalUsers, totalProducts, totalOrders, totalFiles, totalApps, activeErrors } });
+./cloudflare-worker/src/index.js:395:  if (typeof uid !== 'string' || !uid) return c.json({ error: 'UID is required.' }, 400);
+./cloudflare-worker/src/index.js:396:  if (uid === c.get('user').user_id) return c.json({ error: 'Cannot disable your own account.' }, 400);
+./cloudflare-worker/src/index.js:407:  if (typeof uid !== 'string' || !uid) return c.json({ error: 'UID is required.' }, 400);
+./cloudflare-worker/src/index.js:418:    if (!authHeader || !authHeader.startsWith('Bearer ')) return c.json({ error: 'Unauthorized' }, 401);
+./cloudflare-worker/src/index.js:423:    if (!orderId || !newStatus) return c.json({ error: "Missing orderId or newStatus" }, 400);
+./cloudflare-worker/src/index.js:427:    if (!order) return c.json({ error: "Order not found" }, 404);
+./cloudflare-worker/src/index.js:444:          if (currentStock < qty) return c.json({ error: `Insufficient stock for ${product.name || item.productId}` }, 400);
+./cloudflare-worker/src/index.js:471:    return c.json({ error: err.message }, 500);
+./cloudflare-worker/src/index.js:475:app.onError((err, c) => {
+./cloudflare-worker/src/index.js:476:  console.error(err.stack); // log internally
+./cloudflare-worker/src/index.js:477:  return c.json({ ok: false, code: "INTERNAL_ERROR", message: "The server could not complete the request." }, 500);
+./cloudflare-worker/src/index.js:566:    } catch(aiError) {
+./cloudflare-worker/src/index.js:567:      addBrainEvent("Cognitive", "Failed", `AI Subsystem offline: ${aiError.message}`);
+./cloudflare-worker/src/index.js:571:    return c.json({ error: e.message }, 500);
+./cloudflare-worker/src/index.js:619:      if (!env.B2_APPLICATION_KEY_ID) throw new Error('B2 Misconfigured');
+./cloudflare-worker/src/index.js:627:    } catch (error) {
+./cloudflare-worker/src/index.js:628:      console.error('[SYSTEM] Health check failed:', error);
+./cloudflare-worker/src/index.js:634:      addBrainEvent("Scheduled Check", "Degraded", error.message);
+./cloudflare-worker/src/index.js:650:Problem: ${error.message}
+./fix-worker.js:13:    if (!orderId || !newStatus) return c2.json({ error: "Missing orderId or newStatus" }, 400);
+./fix-worker.js:17:    if (!order) return c2.json({ error: "Order not found" }, 404);
+./fix-worker.js:37:            return c2.json({ error: \`Insufficient stock for \${product.name || item.productId}\` }, 400);
+./fix-worker.js:76:    console.error(err);
+./fix-worker.js:77:    return c2.json({ error: err.message }, 500);
+./fix-worker.js:82:code = code.replace('app.onError((err, c2) => {', newEndpoint + '\napp.onError((err, c2) => {');
+./scratch/test_login.js:9:    page.on('pageerror', error => console.error('BROWSER_ERROR:', error.message));
+./scratch/test_login.js:10:    page.on('requestfailed', request => console.error('NETWORK_ERROR:', request.url(), request.failure().errorText));
+./scratch_regression.js:34:    console.error(e);
+./scratch_regression.js:46:    console.error(e);
+./scratch_regression.js:55:    console.error(e);
+./test_runner.js:11:        }).on('error', reject);
+./test_runner.js:17:    adminModules: ['/admin/modules/dashboard.js', '/admin/modules/activity.js', '/admin/modules/errors.js', '/admin/modules/health.js', '/admin/modules/settings.js', '/admin/modules/users.js', '/admin/modules/products.js', '/admin/modules/apps.js']
+./test_runner.js:53:            console.log(`[ERROR] ${page} - ${e.message}`);
+./test_runner.js:68:            console.log(`[ERROR] Module ${mod} - ${e.message}`);
