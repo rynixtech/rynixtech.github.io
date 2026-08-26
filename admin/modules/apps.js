@@ -164,6 +164,6 @@ async function saveApp() {
         loadApps();
     } catch(e) {
         console.error(e);
-        alert('Error saving app');
+        alert('Error saving app: ' + e.message);
     }
 }

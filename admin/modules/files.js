@@ -136,6 +136,7 @@ async function handleUpload(e) {
             });
         } catch (error) {
             console.error('Upload failed for', file.name, error);
+            alert(`Upload failed for ${file.name}: ${error.message}`);
         }
     }
     progressDiv.innerHTML = `All queued uploads processed.`;

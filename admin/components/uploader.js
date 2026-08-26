@@ -170,10 +170,16 @@ export class SystemUploader {
                     setSuccess('Upload successful');
                     resolve(uploadResult);
                   })
-                  .catch((err) => {
-                    setFailed('File uploaded, but metadata save failed.');
-                    SystemUploader.logErrorToFirebase(file.name, category, 'METADATA_SAVE_FAILED: ' + err.message);
-                    reject(new Error('Metadata save failed'));
+                  .catch(async (err) => {
+                    setFailed('File uploaded, but metadata save failed. Rolling back...');
+                    try {
+                      const { deleteB2Object } = await import('../admin-firebase.js');
+                      await deleteB2Object(objectKey);
+                      SystemUploader.logErrorToFirebase(file.name, category, 'METADATA_SAVE_FAILED (Rolled back): ' + err.message);
+                    } catch (rollbackErr) {
+                      SystemUploader.logErrorToFirebase(file.name, category, 'METADATA_SAVE_FAILED (Rollback failed): ' + err.message + ' | ' + rollbackErr.message);
+                    }
+                    reject(new Error('Metadata save failed: ' + err.message));
                   });
               } else {
                 setSuccess('Upload successful');
