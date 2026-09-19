@@ -98,29 +98,16 @@ export class SystemUploader {
         try {
           statusText.textContent = 'AUTHORIZING...';
           const token = await auth.currentUser.getIdToken(true);
-          
-          statusText.textContent = 'REQUESTING URL...';
-          const res = await fetch('https://rynixtech-control-center-worker.rynixtech.workers.dev/api/storage/upload', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ filename: file.name, contentType: file.type || 'application/octet-stream', category })
-          });
-          
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.message || data.error || `HTTP ${res.status}`);
-          }
-          const data = await res.json();
-          if (!data.ok) {
-            throw new Error(data.message || data.error || 'Upload authorization failed');
-          }
-          const { url, objectKey } = data;
 
           statusText.textContent = 'UPLOADING...';
           
           xhr = new XMLHttpRequest();
-          xhr.open('PUT', url, true);
-          xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+          xhr.open('POST', 'https://rynixtech-control-center-worker.rynixtech.workers.dev/api/storage/upload', true);
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+          
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('category', category);
           
           // Timeout detection (30 seconds of no progress)
           const resetTimeout = () => {
@@ -150,15 +137,23 @@ export class SystemUploader {
           xhr.onload = () => {
             cleanup();
             if (xhr.status >= 200 && xhr.status < 300) {
-              const publicUrl = category === 'documents' 
-                  ? `https://rynixtech-control-center-worker.rynixtech.workers.dev/api/documents/${objectKey.split('/').pop()}`
-                  : `https://rynixtech-control-center-worker.rynixtech.workers.dev/${objectKey}`;
+              let resData;
+              try { resData = JSON.parse(xhr.responseText); } catch(e) {}
+              
+              if (!resData || !resData.ok) {
+                setFailed(resData?.error || 'Upload failed');
+                SystemUploader.logErrorToFirebase(file.name, category, resData?.error || 'Upload failed');
+                reject(new Error(resData?.error || 'Upload failed'));
+                return;
+              }
+
+              const { url: publicUrl, objectKey } = resData;
 
               const uploadResult = {
                 name: file.name,
                 size: file.size,
                 contentType: file.type || 'application/octet-stream',
-                url: publicUrl,
+                url: publicUrl || `https://rynixtech-control-center-worker.rynixtech.workers.dev/${objectKey}`,
                 fullPath: objectKey,
                 category
               };
@@ -199,7 +194,7 @@ export class SystemUploader {
             reject(new Error('Cannot reach upload server'));
           };
 
-          xhr.send(file);
+          xhr.send(formData);
         } catch (err) {
           cleanup();
           let errorMsg = err.message || 'Unknown server error';

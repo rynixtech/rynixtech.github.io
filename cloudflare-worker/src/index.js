@@ -6,6 +6,8 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import * as jose from 'jose';
 import { FirebaseRest } from './firebase-rest';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command, GetObjectCommand, CopyObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 const app = new Hono();
 
@@ -88,32 +90,48 @@ app.use('/api/storage/*', adminMiddleware);
 
 // --- Cloudflare R2 Storage (Admin) ---
 
-function getR2Binding(env) {
-    const possibleBindings = ['R2', 'BUCKET', 'STORAGE', 'RYNIX_STORAGE', 'R2_BUCKET', 'RYNIXTECH_STORAGE', 'BUCKET_NAME'];
-    for (const b of possibleBindings) {
-        if (env[b] && typeof env[b].list === 'function') {
-            return env[b];
-        }
+function getS3Client(env) {
+    if (!env.B2_REGION || !env.B2_APPLICATION_KEY_ID || !env.B2_APPLICATION_KEY) {
+        throw new Error("B2 Misconfigured: Missing B2_REGION, B2_APPLICATION_KEY_ID, or B2_APPLICATION_KEY.");
     }
-    throw new Error("R2 binding not found. Please ensure the Cloudflare R2 bucket is bound to the worker. (DOMParser error ROOT CAUSE fixed)");
+    // Assume env.B2_BUCKET_NAME is configured. If not, fallback to a sensible default or throw.
+    if (!env.B2_BUCKET_NAME) {
+        console.warn("B2_BUCKET_NAME is not set in environment variables. Falling back to 'rynixtech-storage'");
+    }
+    return new S3Client({
+        region: env.B2_REGION,
+        endpoint: `https://s3.${env.B2_REGION}.backblazeb2.com`,
+        credentials: {
+            accessKeyId: env.B2_APPLICATION_KEY_ID,
+            secretAccessKey: env.B2_APPLICATION_KEY,
+        }
+    });
+}
+function getBucketName(env) {
+    return env.B2_BUCKET_NAME || 'rynixtech-storage';
 }
 
 app.get('/api/admin/storage/stats', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     let totalSize = 0;
     let totalObjects = 0;
-    let cursor;
+    let continuationToken;
     let isTruncated = true;
     
     while (isTruncated) {
-      const list = await r2.list({ limit: 1000, cursor });
-      for (const obj of list.objects) {
-        totalSize += obj.size;
+      const listCmd = new ListObjectsV2Command({
+        Bucket: getBucketName(c.env),
+        ContinuationToken: continuationToken,
+        MaxKeys: 1000
+      });
+      const list = await s3.send(listCmd);
+      for (const obj of list.Contents || []) {
+        totalSize += obj.Size;
         totalObjects++;
       }
-      isTruncated = list.truncated;
-      cursor = list.cursor;
+      isTruncated = list.IsTruncated;
+      continuationToken = list.NextContinuationToken;
       
       if (totalObjects >= 50000) break;
     }
@@ -127,24 +145,27 @@ app.get('/api/admin/storage/stats', async (c) => {
 
 app.get('/api/admin/storage/list', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     const prefix = c.req.query('prefix') || '';
     const cursor = c.req.query('cursor');
     const limit = parseInt(c.req.query('limit')) || 100;
     const search = c.req.query('search') || '';
     
-    let listOptions = { limit, prefix };
-    if (cursor) listOptions.cursor = cursor;
-    if (!search) listOptions.delimiter = '/'; 
+    const listCmd = new ListObjectsV2Command({
+        Bucket: getBucketName(c.env),
+        MaxKeys: limit,
+        Prefix: prefix || undefined,
+        ContinuationToken: cursor || undefined,
+        Delimiter: search ? undefined : '/'
+    });
+    const list = await s3.send(listCmd);
     
-    const list = await r2.list(listOptions);
-    
-    let objects = list.objects.map(o => ({
-      key: o.key,
-      size: o.size,
-      uploaded: o.uploaded,
-      etag: o.etag,
-      type: o.httpMetadata?.contentType || 'application/octet-stream'
+    let objects = (list.Contents || []).map(o => ({
+      key: o.Key,
+      size: o.Size,
+      uploaded: o.LastModified,
+      etag: o.ETag,
+      type: 'application/octet-stream'
     }));
     
     if (search) {
@@ -154,48 +175,59 @@ app.get('/api/admin/storage/list', async (c) => {
     return c.json({
       ok: true,
       objects,
-      folders: list.delimitedPrefixes || [],
-      nextCursor: list.truncated ? list.cursor : null
+      folders: (list.CommonPrefixes || []).map(p => p.Prefix),
+      nextCursor: list.IsTruncated ? list.NextContinuationToken : null
     });
   } catch (err) {
     return c.json({ ok: false, error: err.message }, 500);
   }
 });
 
-app.post('/api/admin/storage/upload', async (c) => {
+app.post('/api/storage/upload', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     const formData = await c.req.parseBody();
     const file = formData['file'];
-    let path = formData['path'] || '';
+    const category = formData['category'] || 'general';
     
     if (!file || !file.name) {
       return c.json({ ok: false, error: 'No file provided' }, 400);
     }
     
-    const key = path ? (path.endsWith('/') ? path + file.name : path + '/' + file.name) : file.name;
+    const safeFilename = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const objectKey = category 
+        ? `${category}/${Date.now()}-${safeFilename}`
+        : `general/${Date.now()}-${safeFilename}`;
+        
     const arrayBuffer = await file.arrayBuffer();
-    
-    await r2.put(key, arrayBuffer, {
-      httpMetadata: {
-        contentType: file.type || 'application/octet-stream'
-      }
+    const command = new PutObjectCommand({
+      Bucket: getBucketName(c.env),
+      Key: objectKey,
+      Body: new Uint8Array(arrayBuffer),
+      ContentType: file.type || 'application/octet-stream',
     });
+
+    await s3.send(command);
     
-    return c.json({ ok: true, key });
+    return c.json({ ok: true, objectKey });
   } catch (err) {
+    console.error('[UPLOAD ERROR]', err);
     return c.json({ ok: false, error: err.message }, 500);
   }
 });
 
-app.post('/api/admin/storage/delete', async (c) => {
+app.post('/api/storage/delete', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     const body = await c.req.json();
-    const path = body.path;
-    if (!path) return c.json({ ok: false, error: 'No path provided' }, 400);
+    const path = body.objectKey || body.path;
+    if (!path) return c.json({ ok: false, error: 'No path/objectKey provided' }, 400);
     
-    await r2.delete(path);
+    const cmd = new DeleteObjectCommand({
+      Bucket: getBucketName(c.env),
+      Key: path
+    });
+    await s3.send(cmd);
     return c.json({ ok: true });
   } catch (err) {
     return c.json({ ok: false, error: err.message }, 500);
@@ -204,13 +236,20 @@ app.post('/api/admin/storage/delete', async (c) => {
 
 app.post('/api/admin/storage/bulk-delete', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     const body = await c.req.json();
     const paths = body.paths;
     if (!Array.isArray(paths)) return c.json({ ok: false, error: 'Invalid paths array' }, 400);
     
     for (let i = 0; i < paths.length; i += 1000) {
-      await r2.delete(paths.slice(i, i + 1000));
+      const chunk = paths.slice(i, i + 1000);
+      const cmd = new DeleteObjectsCommand({
+        Bucket: getBucketName(c.env),
+        Delete: {
+          Objects: chunk.map(Key => ({ Key }))
+        }
+      });
+      await s3.send(cmd);
     }
     return c.json({ ok: true });
   } catch (err) {
@@ -220,15 +259,17 @@ app.post('/api/admin/storage/bulk-delete', async (c) => {
 
 app.post('/api/admin/storage/copy', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     const body = await c.req.json();
     const { oldPath, newPath } = body;
     if (!oldPath || !newPath) return c.json({ ok: false, error: 'Missing paths' }, 400);
     
-    const obj = await r2.get(oldPath);
-    if (!obj) return c.json({ ok: false, error: 'Source object not found' }, 404);
-    
-    await r2.put(newPath, obj.body, { httpMetadata: obj.httpMetadata });
+    const cmd = new CopyObjectCommand({
+      Bucket: getBucketName(c.env),
+      CopySource: encodeURIComponent(`${getBucketName(c.env)}/${oldPath}`),
+      Key: newPath
+    });
+    await s3.send(cmd);
     return c.json({ ok: true });
   } catch (err) {
     return c.json({ ok: false, error: err.message }, 500);
@@ -237,16 +278,23 @@ app.post('/api/admin/storage/copy', async (c) => {
 
 app.post('/api/admin/storage/move', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     const body = await c.req.json();
     const { oldPath, newPath } = body;
     if (!oldPath || !newPath) return c.json({ ok: false, error: 'Missing paths' }, 400);
     
-    const obj = await r2.get(oldPath);
-    if (!obj) return c.json({ ok: false, error: 'Source object not found' }, 404);
+    const cmdCopy = new CopyObjectCommand({
+      Bucket: getBucketName(c.env),
+      CopySource: encodeURIComponent(`${getBucketName(c.env)}/${oldPath}`),
+      Key: newPath
+    });
+    await s3.send(cmdCopy);
     
-    await r2.put(newPath, obj.body, { httpMetadata: obj.httpMetadata });
-    await r2.delete(oldPath);
+    const cmdDel = new DeleteObjectCommand({
+      Bucket: getBucketName(c.env),
+      Key: oldPath
+    });
+    await s3.send(cmdDel);
     
     return c.json({ ok: true });
   } catch (err) {
@@ -256,16 +304,23 @@ app.post('/api/admin/storage/move', async (c) => {
 
 app.post('/api/admin/storage/rename', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     const body = await c.req.json();
     const { oldPath, newPath } = body;
     if (!oldPath || !newPath) return c.json({ ok: false, error: 'Missing paths' }, 400);
     
-    const obj = await r2.get(oldPath);
-    if (!obj) return c.json({ ok: false, error: 'Source object not found' }, 404);
+    const cmdCopy = new CopyObjectCommand({
+      Bucket: getBucketName(c.env),
+      CopySource: encodeURIComponent(`${getBucketName(c.env)}/${oldPath}`),
+      Key: newPath
+    });
+    await s3.send(cmdCopy);
     
-    await r2.put(newPath, obj.body, { httpMetadata: obj.httpMetadata });
-    await r2.delete(oldPath);
+    const cmdDel = new DeleteObjectCommand({
+      Bucket: getBucketName(c.env),
+      Key: oldPath
+    });
+    await s3.send(cmdDel);
     
     return c.json({ ok: true });
   } catch (err) {
@@ -275,19 +330,17 @@ app.post('/api/admin/storage/rename', async (c) => {
 
 app.get('/api/admin/storage/download', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     const path = c.req.query('path');
     if (!path) return c.json({ ok: false, error: 'No path provided' }, 400);
     
-    const obj = await r2.get(path);
-    if (!obj) return new Response('Not Found', { status: 404 });
-    
-    const headers = new Headers();
-    obj.writeHttpMetadata(headers);
-    headers.set('etag', obj.etag);
-    headers.set('Content-Disposition', `attachment; filename="${path.split('/').pop()}"`);
-    
-    return new Response(obj.body, { headers });
+    const cmd = new GetObjectCommand({
+      Bucket: getBucketName(c.env),
+      Key: path,
+      ResponseContentDisposition: `attachment; filename="${path.split('/').pop()}"`
+    });
+    const url = await getSignedUrl(s3, cmd, { expiresIn: 3600 });
+    return c.redirect(url);
   } catch (err) {
     return c.json({ ok: false, error: err.message }, 500);
   }
@@ -296,16 +349,21 @@ app.get('/api/admin/storage/download', async (c) => {
 // Backward compatibility endpoints for existing UI
 app.get('/api/admin/storage-stats', async (c) => {
   try {
-    const r2 = getR2Binding(c.env);
+    const s3 = getS3Client(c.env);
     let totalSize = 0;
     let totalObjects = 0;
-    let cursor;
+    let continuationToken;
     let isTruncated = true;
     while (isTruncated) {
-      const list = await r2.list({ limit: 1000, cursor });
-      for (const obj of list.objects) { totalSize += obj.size; totalObjects++; }
-      isTruncated = list.truncated;
-      cursor = list.cursor;
+      const listCmd = new ListObjectsV2Command({
+        Bucket: getBucketName(c.env),
+        ContinuationToken: continuationToken,
+        MaxKeys: 1000
+      });
+      const list = await s3.send(listCmd);
+      for (const obj of list.Contents || []) { totalSize += obj.Size; totalObjects++; }
+      isTruncated = list.IsTruncated;
+      continuationToken = list.NextContinuationToken;
       if (totalObjects >= 50000) break;
     }
     return c.json({ ok: true, totalSize, totalObjects });
@@ -321,18 +379,21 @@ app.get('/public/:category/:filename', async (c) => {
     const filename = c.req.param('filename');
     const path = `public/${category}/${filename}`;
     
-    const r2 = getR2Binding(c.env);
-    const obj = await r2.get(path);
-    
-    if (!obj) return new Response('Object Not Found', { status: 404 });
+    const s3 = getS3Client(c.env);
+    const cmd = new GetObjectCommand({
+      Bucket: getBucketName(c.env),
+      Key: path
+    });
+    const data = await s3.send(cmd);
     
     const headers = new Headers();
-    obj.writeHttpMetadata(headers);
-    headers.set('etag', obj.etag);
+    headers.set('Content-Type', data.ContentType || 'application/octet-stream');
+    if (data.ETag) headers.set('ETag', data.ETag);
     headers.set('Cache-Control', 'public, max-age=86400');
-    return new Response(obj.body, { headers });
+    return new Response(data.Body, { headers });
   } catch (err) {
-    return c.json({ error: 'Failed to fetch asset' }, 500);
+    if (err.name === 'NoSuchKey') return new Response('Object Not Found', { status: 404 });
+    return c.json({ error: 'Failed to fetch asset', details: err.message }, 500);
   }
 });
 
@@ -341,17 +402,20 @@ app.get('/api/storage/documents/:filename', async (c) => {
     const filename = c.req.param('filename');
     const path = `private/documents/${filename}`;
     
-    const r2 = getR2Binding(c.env);
-    const obj = await r2.get(path);
-    
-    if (!obj) return new Response('Object Not Found', { status: 404 });
+    const s3 = getS3Client(c.env);
+    const cmd = new GetObjectCommand({
+      Bucket: getBucketName(c.env),
+      Key: path
+    });
+    const data = await s3.send(cmd);
     
     const headers = new Headers();
-    obj.writeHttpMetadata(headers);
-    headers.set('etag', obj.etag);
-    return new Response(obj.body, { headers });
+    headers.set('Content-Type', data.ContentType || 'application/octet-stream');
+    if (data.ETag) headers.set('ETag', data.ETag);
+    return new Response(data.Body, { headers });
   } catch (err) {
-    return c.json({ error: 'Failed to fetch document' }, 500);
+    if (err.name === 'NoSuchKey') return new Response('Object Not Found', { status: 404 });
+    return c.json({ error: 'Failed to fetch document', details: err.message }, 500);
   }
 });
 
@@ -450,7 +514,7 @@ app.post('/api/auth/setInitialAdmin', async (c) => {
     }
 
     await fb.setCustomUserClaims(uid, { admin: true });
-    await logActivity(fb, uid, "initial-admin-setup", "system", uid, "Owner account promoted to admin via Worker.");
+    await logAdminActivity(fb, uid, "initial-admin-setup", "system", uid, "Owner account promoted to admin via Worker.");
     console.log('[DIAGNOSTIC] Admin claim set successfully');
     return c.json({ data: { ok: true, message: 'Admin claim set.' } });
   } catch (err) {
@@ -508,7 +572,7 @@ app.post('/api/admin/disableUser', async (c) => {
   
   const fb = getFirebaseRest(c.env);
   await fb.updateUser(uid, { disabled: true });
-  await logActivity(fb, c.get('user').user_id, "disable-user", "user", uid, "User disabled by admin.");
+  await logAdminActivity(fb, c.get('user').user_id, "disable-user", "user", uid, "User disabled by admin.");
   return c.json({ data: { ok: true } });
 });
 
@@ -519,7 +583,7 @@ app.post('/api/admin/enableUser', async (c) => {
   
   const fb = getFirebaseRest(c.env);
   await fb.updateUser(uid, { disabled: false });
-  await logActivity(fb, c.get('user').user_id, "enable-user", "user", uid, "User enabled by admin.");
+  await logAdminActivity(fb, c.get('user').user_id, "enable-user", "user", uid, "User enabled by admin.");
   return c.json({ data: { ok: true } });
 });
 

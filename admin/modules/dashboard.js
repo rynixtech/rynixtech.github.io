@@ -10,26 +10,21 @@ export async function render(container) {
     `;
 
     try {
-        // We'll mock the counts if the cloud function isn't available
-        let stats = { users: 0, products: 0, orders: 0, files: 0, apps: 0, errors: 0 };
+        let stats = { users: 0, products: 0, orders: 0, files: 0, apps: 0, errors: 0, revenue: 0, books: 0, storageUsed: '0 MB' };
         try {
-            const getAdminStats = httpsCallable(null, 'getAdminStats');
-            const result = await getAdminStats();
-            const d = result.data || result;
-            stats = {
-              users: d.totalUsers || d.users || 0,
-              products: d.totalProducts || d.products || 0,
-              orders: d.totalOrders || d.orders || 0,
-              files: d.totalFiles || d.files || 0,
-              apps: d.totalApps || d.apps || 0,
-              errors: d.activeErrors || d.errors || 0,
-              revenue: d.revenue || 0,
-              books: d.books || 0,
-              storageUsed: d.storageUsed || '0 MB'
-            };
-
+            const { getCountFromServer } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+            const [usersSnap, productsSnap, ordersSnap, errorsSnap] = await Promise.all([
+                getCountFromServer(collection(db, 'users')),
+                getCountFromServer(collection(db, 'products')),
+                getCountFromServer(collection(db, 'orders')),
+                getCountFromServer(collection(db, 'errors'))
+            ]);
+            stats.users = usersSnap.data().count;
+            stats.products = productsSnap.data().count;
+            stats.orders = ordersSnap.data().count;
+            stats.errors = errorsSnap.data().count;
         } catch (e) {
-            console.warn("Cloud function getAdminStats failed, using fallback", e);
+            console.warn("Aggregation failed", e);
         }
 
         if (!stats.storageUsed) {

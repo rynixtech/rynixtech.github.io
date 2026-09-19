@@ -2,6 +2,11 @@ import { escapeHTML } from '../admin-firebase.js';
 
 let currentModal = null;
 
+// Clean up backdrop on hash change
+window.addEventListener('hashchange', () => {
+  hideModal();
+});
+
 export function showModal({ title, content, footer, size = 'md', onClose }) {
   if (currentModal) hideModal();
 
@@ -20,6 +25,8 @@ export function showModal({ title, content, footer, size = 'md', onClose }) {
   const modal = document.createElement('div');
   modal.className = 'modal-content';
   modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'modal-title');
   modal.style.cssText = `
     width: ${modalWidth}; max-height: 90vh; background: #0f1425;
     border: 1px solid rgba(183,202,255,0.12); border-radius: 8px;
@@ -32,8 +39,8 @@ export function showModal({ title, content, footer, size = 'md', onClose }) {
 
   modal.innerHTML = `
     <div style="padding: 20px; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between; align-items: center;">
-      <h3 style="margin: 0; font-family: 'Space Grotesk', sans-serif;">${escapeHTML(title)}</h3>
-      <button class="modal-close" style="background: none; border: none; color: #aeb8d2; font-size: 1.5rem; cursor: pointer;">&times;</button>
+      <h3 id="modal-title" style="margin: 0; font-family: 'Space Grotesk', sans-serif;">${escapeHTML(title)}</h3>
+      <button class="modal-close" style="background: none; border: none; color: #aeb8d2; font-size: 1.5rem; cursor: pointer;" aria-label="Close">&times;</button>
     </div>
     <div class="modal-body" style="padding: 20px; overflow-y: auto; flex: 1;">
       ${contentHtml}
@@ -51,13 +58,29 @@ export function showModal({ title, content, footer, size = 'md', onClose }) {
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
 
+  // Focus management
+  const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (focusable.length) {
+    focusable[0].focus();
+  } else {
+    modal.setAttribute('tabindex', '-1');
+    modal.focus();
+  }
+
   // Animate in
   requestAnimationFrame(() => {
     backdrop.style.opacity = '1';
     modal.style.transform = 'translateY(0)';
   });
 
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      closeHandler();
+    }
+  };
+
   const closeHandler = () => {
+    document.removeEventListener('keydown', escHandler);
     hideModal();
     if (onClose) onClose();
   };
@@ -66,30 +89,31 @@ export function showModal({ title, content, footer, size = 'md', onClose }) {
   backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) closeHandler();
   });
-
-  const escHandler = (e) => {
-    if (e.key === 'Escape') {
-      closeHandler();
-      document.removeEventListener('keydown', escHandler);
-    }
-  };
   document.addEventListener('keydown', escHandler);
 
-  currentModal = { backdrop, modal, closeHandler };
+  currentModal = { backdrop, modal, closeHandler, escHandler };
   return modal;
 }
 
 export function hideModal() {
   if (!currentModal) return;
-  const { backdrop, modal } = currentModal;
+  const { backdrop, modal, escHandler, cleanupTimer } = currentModal;
+  
+  // Cleanup timer prevention for rapid open/close
+  if (cleanupTimer) clearTimeout(cleanupTimer);
+  document.removeEventListener('keydown', escHandler);
   
   backdrop.style.opacity = '0';
   modal.style.transform = 'translateY(20px)';
   
-  setTimeout(() => {
+  const timerId = setTimeout(() => {
     if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
-    currentModal = null;
+    if (currentModal && currentModal.backdrop === backdrop) {
+      currentModal = null;
+    }
   }, 200);
+
+  currentModal.cleanupTimer = timerId;
 }
 
 export function showConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', danger = false }) {

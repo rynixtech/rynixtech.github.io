@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#050711">
-  <title>Shopping — Rynix Tech</title>
+  <title>Shopping - Rynix Tech</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="style.css">
   <style>
@@ -22,60 +22,57 @@
     .section-header h2 { font-size: 1.6rem; margin: 0; font-family: 'Space Grotesk', sans-serif; }
 
     .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; }
-    .product-card { background: rgba(11, 16, 35, 0.82); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; transition: transform 0.2s, border-color 0.2s; backdrop-filter: blur(18px); }
-    .product-card:hover { transform: translateY(-5px); border-color: rgba(246,198,87,0.5); }
-    .product-image { height: 200px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: var(--muted); }
-    .product-details { padding: 20px; }
-    .product-details h3 { margin: 0 0 10px 0; font-size: 1.2rem; }
-    .product-details .price { color: var(--gold-soft); font-weight: 700; font-size: 1.1rem; margin-bottom: 15px; }
-    .product-details .button { width: 100%; min-height: 40px; }
+    .product-card { background: rgba(11, 16, 35, 0.82); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; transition: transform 0.2s, border-color 0.2s; backdrop-filter: blur(18px); display: flex; flex-direction: column; }
+    .product-card:hover { transform: translateY(-5px); border-color: rgba(85,220,255,0.5); }
+    .product-image { height: 250px; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: var(--muted); overflow: hidden; position: relative; }
+    .product-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+    .product-card:hover .product-image img { transform: scale(1.05); }
+    .product-details { padding: 25px; display: flex; flex-direction: column; flex: 1; }
+    .product-details h3 { margin: 0 0 10px 0; font-size: 1.3rem; font-family: 'Space Grotesk', sans-serif; color: #f4f7ff; }
+    .product-details p.desc { color: var(--muted); font-size: 0.95rem; margin-bottom: 20px; flex: 1; line-height: 1.5; }
+    .product-details .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .product-details .price { color: #64dfac; font-weight: 800; font-size: 1.4rem; }
+    .product-details .stock-badge { padding: 4px 10px; border-radius: 99px; font-size: 0.8rem; font-weight: bold; background: rgba(255,255,255,0.1); }
+    
+    .btn-cart { width: 100%; padding: 14px; border-radius: 12px; border: none; background: #55dcff; color: #0a0e1a; font-weight: bold; font-size: 1rem; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+    .btn-cart:hover:not(:disabled) { background: #42b2ce; }
+    .btn-cart:active:not(:disabled) { transform: scale(0.98); }
+    .btn-cart:disabled { background: rgba(255,255,255,0.1); color: var(--muted); cursor: not-allowed; }
+
+    #loading-state { text-align: center; padding: 60px 0; color: var(--muted); font-size: 1.2rem; }
   </style>
 </head>
-<body class="site-shell">
-  <div id="galaxy" aria-hidden="true"></div>
-  <canvas id="stars" aria-hidden="true"></canvas>
-
-  <header class="site-header">
-    <a class="brand" href="index.html">RYNIX TECH</a>
-    <div class="header-actions">
-      <a class="button button-quiet" href="dashboard.html">My Account</a>
-    </div>
+<body>
+  <header>
+    <!-- Basic nav, integrate your main nav here -->
+    <nav style="padding: 20px; max-width: 1160px; margin: 0 auto; display: flex; justify-content: space-between;">
+        <a href="index.html" style="color: #fff; text-decoration: none; font-family: 'Space Grotesk'; font-size: 1.2rem; font-weight: bold;">Rynix Tech</a>
+        <a href="login.html" style="color: #55dcff; text-decoration: none;">Login</a>
+    </nav>
   </header>
-
+  
   <main class="store-container">
     <div class="search-section">
-      <h1>Shopping</h1>
-      <p>Discover our latest physical and digital products.</p>
+      <h1>The Rynix Store</h1>
+      <p>Premium gear and digital solutions.</p>
       <div class="search-bar">
-        <input type="text" placeholder="Search products, merchandise, or hardware..." aria-label="Search Products">
+        <input type="text" id="store-search" placeholder="Search products...">
       </div>
     </div>
     
     <section class="content-section">
-      <div class="section-header">
-        <h2>Featured Products</h2>
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+        <h2>Catalog</h2>
       </div>
-      <div class="product-grid">
-        <!-- Mock Product 1 -->
-        <article class="product-card">
-          <div class="product-image">Product Image</div>
-          <div class="product-details">
-            <h3>Rynix Tech Hoodie</h3>
-            <div class="price">$55.00</div>
-            <button class="button button-quiet">Coming Soon</button>
-          </div>
-        </article>
-        <!-- Mock Product 2 -->
-        <article class="product-card">
-          <div class="product-image">Product Image</div>
-          <div class="product-details">
-            <h3>Rynix Desk Mat</h3>
-            <div class="price">$35.00</div>
-            <button class="button button-quiet">Coming Soon</button>
-          </div>
-        </article>
+      
+      <div id="loading-state">Loading products...</div>
+      
+      <div class="product-grid" id="product-grid" style="display: none;">
+        <!-- Dynamically injected via shopping.js -->
       </div>
     </section>
   </main>
+  
+  <script type="module" src="shopping.js"></script>
 </body>
 </html>

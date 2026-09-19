@@ -1,128 +1,127 @@
 import { db, escapeHTML } from '../admin-firebase.js';
-import { collection, query, orderBy, limit, getDocs, getDoc, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
-import { showModal, hideModal } from '../components/modal.js';
+import { collection, query, orderBy, getDocs, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
     container.innerHTML = `
         <div class="module-container" style="padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Inventory</h2>
-                <button onclick="window.openModal_inventory()" style="background: #55dcff; color: #0a0e1a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add New</button>
+                <h2>Inventory Management</h2>
+                <button id="refresh-inventory" style="background: #55dcff; color: #0a0e1a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">↻ Refresh</button>
             </div>
-
-            <div id="inventory-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-                <div style="grid-column: 1 / -1; text-align: center; color: #aeb8d2;">Loading...</div>
+            
+            <div style="background: rgba(11, 16, 35, 0.82); border-radius: 12px; border: 1px solid var(--line); overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid var(--line); background: rgba(255,255,255,0.02);">
+                            <th style="padding: 12px 16px;">Product Name</th>
+                            <th style="padding: 12px 16px;">Category</th>
+                            <th style="padding: 12px 16px;">Current Stock</th>
+                            <th style="padding: 12px 16px;">Status</th>
+                            <th style="padding: 12px 16px; text-align: right;">Update Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody id="inventory-tbody">
+                        <tr><td colspan="5" style="padding:20px; text-align:center;">Loading inventory...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     `;
-    
-    loadItems();
-}
 
-async function loadItems() {
-    const grid = document.getElementById('inventory-grid');
-    if (!grid) return;
-    try {
-        const q = query(collection(db, 'inventory'), orderBy('createdAt', 'desc'), limit(50));
-        const snapshot = await getDocs(q);
+    async function loadInventory() {
+        const tbody = document.getElementById('inventory-tbody');
+        if(!tbody) return;
         
-        if (snapshot.empty) {
-            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #aeb8d2;">No data found</div>';
-            return;
-        }
-
-        grid.innerHTML = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return `
-                <div style="background: #0f1425; border-radius: 8px; border: 1px solid rgba(183,202,255,0.12); padding: 20px;">
-                    <h3 style="margin: 0 0 10px 0; color: #f4f7ff;">${escapeHTML(data.title || data.name || 'Untitled')}</h3>
-                    <p style="color: #aeb8d2; font-size: 0.9em; margin-bottom: 16px;">${escapeHTML(data.details || data.description || '')}</p>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="window.edit_inventory('${escapeHTML(doc.id)}')" style="flex: 1; background: rgba(85,220,255,0.1); border: 1px solid rgba(85,220,255,0.2); color: #55dcff; padding: 8px; border-radius: 4px; cursor: pointer;">Edit</button>
-                        <button onclick="window.delete_inventory('${escapeHTML(doc.id)}')" style="background: rgba(255,117,143,0.1); border: 1px solid rgba(255,117,143,0.2); color: #ff758f; padding: 8px; border-radius: 4px; cursor: pointer;">Delete</button>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    } catch(e) {
-        console.error(e);
-        grid.innerHTML = '<div style="color: #ff758f;">Error loading data (implement firestore rules)</div>';
-    }
-}
-
-window.delete_inventory = async (docId) => {
-    if(!confirm('Delete this entry?')) return;
-    try {
-        await deleteDoc(doc(db, 'inventory', docId));
-        loadItems();
-    } catch(e) {
-        alert('Error deleting: ' + e.message);
-    }
-}
-
-window.openModal_inventory = (docId = '', title = '', details = '') => {
-    const content = document.createElement('div');
-    content.innerHTML = `
-        <form id="inventory-form" style="display: flex; flex-direction: column; gap: 16px;">
-            <input type="hidden" id="inventory-doc-id" value="${escapeHTML(docId)}">
-            <div>
-                <label style="display:block; margin-bottom:4px; color:#aeb8d2;">Name / Title</label>
-                <input type="text" id="inventory-title" required value="${escapeHTML(title)}" style="width: 100%; padding: 8px; background: #0a0e1a; border: 1px solid rgba(183,202,255,0.12); color: white; border-radius: 4px;">
-            </div>
-            <div>
-                <label style="display:block; margin-bottom:4px; color:#aeb8d2;">Details</label>
-                <textarea id="inventory-details" rows="3" style="width: 100%; padding: 8px; background: #0a0e1a; border: 1px solid rgba(183,202,255,0.12); color: white; border-radius: 4px;">${escapeHTML(details)}</textarea>
-            </div>
-            <button type="submit" style="background: #55dcff; color: #0a0e1a; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 8px;">Save</button>
-        </form>
-    `;
-
-    content.querySelector('#inventory-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const t = document.getElementById('inventory-title').value;
-        const d = document.getElementById('inventory-details').value;
-        const did = document.getElementById('inventory-doc-id').value;
-        
-        const data = {
-            title: t,
-            details: d,
-            updatedAt: serverTimestamp()
-        };
-
         try {
-            if(did) {
-                await updateDoc(doc(db, 'inventory', did), data);
-            } else {
-                data.createdAt = serverTimestamp();
-                await addDoc(collection(db, 'inventory'), data);
+            const q = query(collection(db, 'products'), orderBy('name', 'asc'));
+            const snapshot = await getDocs(q);
+            
+            if (snapshot.empty) {
+                tbody.innerHTML = '<tr><td colspan="5" style="padding:20px; text-align:center;">No products found in the database.</td></tr>';
+                return;
             }
-            hideModal();
-            loadItems();
-        } catch(err) {
-            console.error(err);
-            alert('Error saving: ' + err.message);
-        }
-    });
 
-    showModal({
-        title: docId ? 'Edit Entry' : 'Add Entry',
-        content: content,
-        size: 'md'
-    });
-}
+            tbody.innerHTML = snapshot.docs.map(docSnap => {
+                const data = docSnap.data();
+                const stock = Number(data.stock) || 0;
+                
+                let statusBadge = '';
+                if (stock === 0 || data.status === 'out_of_stock') {
+                    statusBadge = '<span style="background: rgba(255,117,143,0.1); color: #ff758f; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold;">Out of Stock</span>';
+                } else if (stock <= 5) {
+                    statusBadge = '<span style="background: rgba(255,193,7,0.1); color: #ffc107; padding: 4px 8px; border-radius: 4px; font-size: 0.85em; font-weight: bold;">Low Stock</span>';
+                } else {
+                    statusBadge = '<span style="background: rgba(100,223,172,0.1); color: #64dfac; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">In Stock</span>';
+                }
 
-window.edit_inventory = async (docId) => {
-    try {
-        const docRef = doc(db, 'inventory', docId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            window.openModal_inventory(docId, data.title || data.name || '', data.details || data.description || '');
-        } else {
-            alert('Not found');
+                return `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 12px 16px; font-weight: 500;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                ${data.imageUrl ? `<img src="${escapeHTML(data.imageUrl)}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">` : `<div style="width:40px; height:40px; background:rgba(255,255,255,0.1); border-radius:4px; display:flex; align-items:center; justify-content:center; font-size:20px;">📦</div>`}
+                                <span>${escapeHTML(data.name || 'Unnamed')}</span>
+                            </div>
+                        </td>
+                        <td style="padding: 12px 16px; color: var(--muted);">${escapeHTML(data.category || 'N/A')}</td>
+                        <td style="padding: 12px 16px; font-size: 1.1em; font-weight: bold; color: ${stock <= 5 ? '#ffc107' : '#f4f7ff'};">${stock}</td>
+                        <td style="padding: 12px 16px;">${statusBadge}</td>
+                        <td style="padding: 12px 16px; text-align: right;">
+                            <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                                <input type="number" id="stock-input-${escapeHTML(docSnap.id)}" value="${stock}" min="0" style="width: 70px; padding: 6px; border-radius: 4px; border: 1px solid var(--line); background: rgba(0,0,0,0.3); color: #fff;">
+                                <button class="btn-update-stock" data-id="${escapeHTML(docSnap.id)}" style="background: rgba(85,220,255,0.1); color: #55dcff; border: 1px solid rgba(85,220,255,0.2); padding: 6px 12px; border-radius: 4px; cursor: pointer;">Save</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.querySelectorAll('.btn-update-stock').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const input = document.getElementById(`stock-input-${id}`);
+                    const newStock = Number(input.value);
+                    
+                    if (newStock < 0) {
+                        alert("Stock cannot be negative.");
+                        return;
+                    }
+                    
+                    try {
+                        e.target.textContent = '...';
+                        e.target.disabled = true;
+                        
+                        let updateData = { stock: newStock };
+                        if (newStock === 0) {
+                            updateData.status = 'out_of_stock';
+                        } else if (newStock > 0) {
+                            updateData.status = 'active';
+                        }
+                        
+                        await updateDoc(doc(db, 'products', id), updateData);
+                        
+                        e.target.style.background = 'rgba(100,223,172,0.2)';
+                        e.target.style.color = '#64dfac';
+                        e.target.textContent = 'Saved!';
+                        
+                        setTimeout(() => {
+                            loadInventory();
+                        }, 1000);
+                        
+                    } catch (err) {
+                        console.error(err);
+                        alert("Failed to update stock: " + err.message);
+                        e.target.textContent = 'Save';
+                        e.target.disabled = false;
+                    }
+                });
+            });
+
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = `<tr><td colspan="5" style="padding:20px; text-align:center; color:#ff758f;">Error: ${escapeHTML(e.message)}</td></tr>`;
         }
-    } catch(e) {
-        console.error(e);
-        alert('Error loading data');
     }
+
+    document.getElementById('refresh-inventory').addEventListener('click', loadInventory);
+    loadInventory();
 }
