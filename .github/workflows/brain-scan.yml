@@ -1,0 +1,41 @@
+name: 🧠 System Brain Scan
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+  workflow_dispatch:  # Manual trigger
+    inputs:
+      skip_autofix:
+        description: 'Skip auto-fix (scan only)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  brain-scan:
+    runs-on: ubuntu-latest
+    name: Run System Brain
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          
+      - name: Install dependencies
+        run: pip install -r brain/requirements.txt
+        
+      - name: Run System Brain
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          SKIP_AUTOFIX: ${{ github.event.inputs.skip_autofix || 'false' }}
+        run: python brain/system_brain.py
+        
+      - name: Upload scan log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brain-scan-${{ github.run_number }}
+          path: brain/scan_report.txt
+          retention-days: 30
