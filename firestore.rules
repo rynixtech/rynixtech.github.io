@@ -227,6 +227,10 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    match /restore_points/{docId} {
+      allow read, write: if isAdmin();
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

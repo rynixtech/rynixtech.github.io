@@ -1,22 +1,18 @@
 import { db, escapeHTML } from '../admin-firebase.js';
-import { collection, query, orderBy, limit, getDocs, getDoc, doc, deleteDoc, updateDoc, addDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
-import { showModal, hideModal } from '../components/modal.js';
+import { collection, query, orderBy, limit, getDocs, doc, deleteDoc } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
 
 export async function render(container) {
     container.innerHTML = `
         <div class="module-container" style="padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2>Customer Activity</h2>
-                <button onclick="window.openModal_customer_activity()" style="background: #55dcff; color: #0a0e1a; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">+ Add New</button>
+                <h2 style="color: #f4f7ff; margin: 0;">Customer Activity</h2>
             </div>
-
             <div id="customer_activity-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
                 <div style="grid-column: 1 / -1; text-align: center; color: #aeb8d2;">Loading...</div>
             </div>
         </div>
     `;
-    
-    loadItems();
+    await loadItems();
 }
 
 async function loadItems() {
@@ -25,104 +21,47 @@ async function loadItems() {
     try {
         const q = query(collection(db, 'customer_activity'), orderBy('createdAt', 'desc'), limit(50));
         const snapshot = await getDocs(q);
-        
         if (snapshot.empty) {
-            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #aeb8d2;">No data found</div>';
+            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #aeb8d2; padding: 40px; background: #0f1425; border-radius: 8px; border: 1px solid rgba(183,202,255,0.12);">No data found</div>';
             return;
         }
-
-        grid.innerHTML = snapshot.docs.map(doc => {
-            const data = doc.data();
-            return `
-                <div style="background: #0f1425; border-radius: 8px; border: 1px solid rgba(183,202,255,0.12); padding: 20px;">
-                    <h3 style="margin: 0 0 10px 0; color: #f4f7ff;">${escapeHTML(data.title || data.name || 'Untitled')}</h3>
-                    <p style="color: #aeb8d2; font-size: 0.9em; margin-bottom: 16px;">${escapeHTML(data.details || data.description || '')}</p>
-                    <div style="display: flex; gap: 8px;">
-                        <button onclick="window.edit_customer_activity('${escapeHTML(doc.id)}')" style="flex: 1; background: rgba(85,220,255,0.1); border: 1px solid rgba(85,220,255,0.2); color: #55dcff; padding: 8px; border-radius: 4px; cursor: pointer;">Edit</button>
-                        <button onclick="window.delete_customer_activity('${escapeHTML(doc.id)}')" style="background: rgba(255,117,143,0.1); border: 1px solid rgba(255,117,143,0.2); color: #ff758f; padding: 8px; border-radius: 4px; cursor: pointer;">Delete</button>
-                    </div>
+        grid.innerHTML = '';
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            
+            const dateStr = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString() : 'Unknown date';
+            const descPreview = data.details ? (data.details.length > 50 ? escapeHTML(data.details.substring(0, 50)) + '...' : escapeHTML(data.details)) : '';
+            
+            const card = document.createElement('div');
+            card.style.cssText = 'background: #0f1425; border-radius: 8px; border: 1px solid rgba(183,202,255,0.12); padding: 20px; display: flex; flex-direction: column; gap: 10px;';
+            card.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div style="font-weight: bold; color: #f4f7ff; text-transform: uppercase; font-size: 1.1em;">${escapeHTML(data.action || 'unknown')}</div>
+                    <span style="color: #aeb8d2; font-size: 0.8em;">${escapeHTML(dateStr)}</span>
+                </div>
+                <div style="color: #55dcff; font-size: 0.9em; margin-top: -5px;">${escapeHTML(data.userEmail || 'Anonymous')}</div>
+                ${data.page ? \`<div style="color: #aeb8d2; font-size: 0.85em;">Page: <span style="color: white;">\${escapeHTML(data.page)}</span></div>\` : ''}
+                ${data.ipAddress ? \`<div style="color: #aeb8d2; font-size: 0.85em; font-family: monospace;">IP: \${escapeHTML(data.ipAddress)}</div>\` : ''}
+                ${descPreview ? \`<div style="color: #aeb8d2; font-size: 0.85em; font-style: italic; background: rgba(183,202,255,0.05); padding: 8px; border-radius: 4px;">\${descPreview}</div>\` : ''}
+                <div style="margin-top: auto; display: flex; padding-top: 15px;">
+                    <button onclick="window.delete_customer_activity('${id}')" style="width: 100%; background: rgba(255,117,143,0.1); border: 1px solid rgba(255,117,143,0.2); color: #ff758f; padding: 8px; border-radius: 4px; cursor: pointer;">Delete Log</button>
                 </div>
             `;
-        }).join('');
-    } catch(e) {
-        console.error(e);
-        grid.innerHTML = '<div style="color: #ff758f;">Error loading data (implement firestore rules)</div>';
+            grid.appendChild(card);
+        });
+    } catch (error) {
+        grid.innerHTML = `<div style="grid-column: 1 / -1; color: #ff758f; text-align: center; padding: 20px; background: #0f1425; border-radius: 8px; border: 1px solid rgba(183,202,255,0.12);">Error loading data: ${escapeHTML(error.message)}</div>`;
     }
 }
 
-window.delete_customer_activity = async (docId) => {
-    if(!confirm('Delete this entry?')) return;
-    try {
-        await deleteDoc(doc(db, 'customer_activity', docId));
-        loadItems();
-    } catch(e) {
-        alert('Error deleting: ' + e.message);
-    }
-}
-
-window.openModal_customer_activity = (docId = '', title = '', details = '') => {
-    const content = document.createElement('div');
-    content.innerHTML = `
-        <form id="customer_activity-form" style="display: flex; flex-direction: column; gap: 16px;">
-            <input type="hidden" id="customer_activity-doc-id" value="${escapeHTML(docId)}">
-            <div>
-                <label style="display:block; margin-bottom:4px; color:#aeb8d2;">Name / Title</label>
-                <input type="text" id="customer_activity-title" required value="${escapeHTML(title)}" style="width: 100%; padding: 8px; background: #0a0e1a; border: 1px solid rgba(183,202,255,0.12); color: white; border-radius: 4px;">
-            </div>
-            <div>
-                <label style="display:block; margin-bottom:4px; color:#aeb8d2;">Details</label>
-                <textarea id="customer_activity-details" rows="3" style="width: 100%; padding: 8px; background: #0a0e1a; border: 1px solid rgba(183,202,255,0.12); color: white; border-radius: 4px;">${escapeHTML(details)}</textarea>
-            </div>
-            <button type="submit" style="background: #55dcff; color: #0a0e1a; border: none; padding: 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 8px;">Save</button>
-        </form>
-    `;
-
-    content.querySelector('#customer_activity-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const t = document.getElementById('customer_activity-title').value;
-        const d = document.getElementById('customer_activity-details').value;
-        const did = document.getElementById('customer_activity-doc-id').value;
-        
-        const data = {
-            title: t,
-            details: d,
-            updatedAt: serverTimestamp()
-        };
-
+window.delete_customer_activity = async (id) => {
+    if (confirm('Are you sure you want to delete this activity log?')) {
         try {
-            if(did) {
-                await updateDoc(doc(db, 'customer_activity', did), data);
-            } else {
-                data.createdAt = serverTimestamp();
-                await addDoc(collection(db, 'customer_activity'), data);
-            }
-            hideModal();
+            await deleteDoc(doc(db, 'customer_activity', id));
             loadItems();
-        } catch(err) {
-            console.error(err);
-            alert('Error saving: ' + err.message);
+        } catch (error) {
+            alert('Error deleting: ' + error.message);
         }
-    });
-
-    showModal({
-        title: docId ? 'Edit Entry' : 'Add Entry',
-        content: content,
-        size: 'md'
-    });
-}
-
-window.edit_customer_activity = async (docId) => {
-    try {
-        const docRef = doc(db, 'customer_activity', docId);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            window.openModal_customer_activity(docId, data.title || data.name || '', data.details || data.description || '');
-        } else {
-            alert('Not found');
-        }
-    } catch(e) {
-        console.error(e);
-        alert('Error loading data');
     }
-}
+};
