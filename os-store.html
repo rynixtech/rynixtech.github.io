@@ -74,6 +74,9 @@
 
   <header class="site-header">
     <a class="brand" href="index.html">RYNIX TECH</a>
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a href="shopping.html">Shopping</a><a href="books.html">Book Store</a><a href="apps.html">App Store</a><a href="os-store.html">OS Store</a>
+    </nav>
     <div class="header-actions">
       <a class="button button-quiet" href="dashboard.html">My Account</a>
     </div>
@@ -84,7 +87,7 @@
       <h1>Operating Systems</h1>
       <p>Discover, explore, and download Rynix OS architectures, from edge devices to high-performance secure environments.</p>
       <div class="search-bar">
-        <input type="text" placeholder="Search builds, architectures, or releases..." aria-label="Search OS">
+        <input type="text" id="os-search" placeholder="Search builds, architectures, or releases..." aria-label="Search OS">
         <div class="search-icon">🔍</div>
       </div>
     </div>
@@ -124,7 +127,7 @@
         grid.innerHTML = snapshot.docs.map(doc => {
           const data = doc.data();
           return `
-            <article class="release-card">
+            <article class="release-card" data-search="${esc(`${data.name || ''} ${data.version || ''} ${data.architecture || ''} ${data.description || ''}`.toLowerCase())}">
               <h3>${esc(data.name || 'Unnamed OS')}</h3>
               <div class="release-meta">
                 <span class="meta-tag">v${esc(data.version || '1.0.0')}</span>
@@ -140,7 +143,7 @@
 
               <div class="download-row">
                 <span class="download-size">Size: ${esc(data.size ? (data.size / 1024 / 1024).toFixed(1) + ' MB' : 'Unknown')}</span>
-                <button class="button button-quiet" style="min-height: 32px; font-size: 0.75rem; padding: 0 14px;" onclick="window.open('${esc(data.downloadUrl || '#')}', '_blank')">Download ISO</button>
+                ${data.downloadUrl ? `<a class="button button-quiet" style="min-height:32px;font-size:.75rem;padding:0 14px;" href="${esc(data.downloadUrl)}" target="_blank" rel="noopener">Download ISO</a>` : '<button class="button button-quiet" style="min-height:32px;font-size:.75rem;padding:0 14px;" disabled>Download unavailable</button>'}
               </div>
             </article>
           `;
@@ -149,6 +152,13 @@
         grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ff758f; padding: 40px;">Failed to load OS releases.</div>';
       }
     }
+
+    document.getElementById('os-search').addEventListener('input', event => {
+      const query = event.target.value.trim().toLowerCase();
+      document.querySelectorAll('#osGrid .release-card').forEach(card => {
+        card.hidden = Boolean(query) && !card.dataset.search.includes(query);
+      });
+    });
 
     loadOsReleases();
   </script>

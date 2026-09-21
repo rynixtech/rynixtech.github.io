@@ -35,10 +35,11 @@ export async function render(container) {
 
         container.innerHTML = `
             <div class="dashboard-module">
-                <h2>Dashboard Overview</h2>
+                <p class="eyebrow">Operations / live workspace</p>
+                <h2>Control the next move.</h2>
                 
                 <div class="quick-actions" style="margin-bottom: 32px; padding: 20px; background: #0f1425; border-radius: 8px;">
-                    <h3 style="margin-top: 0;">Quick Actions</h3>
+                    <h3 style="margin-top: 0;">Start a workflow</h3>
                     <div style="display: flex; flex-wrap: wrap; gap: 12px;">
                         <button class="btn btn-primary" onclick="window.location.hash='#products'">+ Add Product</button>
                         <button class="btn btn-primary" onclick="window.location.hash='#books'">+ Add Book</button>
@@ -139,9 +140,13 @@ function setupListeners() {
             <li style="color: #ff758f; padding: 12px; background: rgba(255,117,143,0.1); border-radius: 6px; border: 1px solid rgba(255,117,143,0.2);">
                 <div style="font-weight: bold; margin-bottom: 4px;">Error Loading Data</div>
                 <div style="font-size: 0.85em; opacity: 0.9; margin-bottom: 8px; word-break: break-word;">${escapeHTML(error.message || 'Permission denied or network error')}</div>
-                <button onclick="window.retrySnapshot['${escapeHTML(retryKey)}']()" style="background: #ff758f; color: #0a0e1a; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">Retry Connection</button>
+                <button class="retry-snapshot-btn" data-retry-key="${escapeHTML(retryKey)}" style="background: #ff758f; color: #0a0e1a; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">Retry Connection</button>
             </li>
         `;
+        const retryBtn = element.querySelector('.retry-snapshot-btn');
+        if (retryBtn) {
+            retryBtn.addEventListener('click', () => retryFn());
+        }
     };
 
     function setupActivity() {
@@ -155,7 +160,7 @@ function setupListeners() {
             activityList.innerHTML = snapshot.docs.map(doc => {
                 const data = doc.data();
                 return `<li style="padding: 8px 0; border-bottom: 1px solid rgba(183,202,255,0.12); display: flex; justify-content: space-between;">
-                    <span>${data.actionIcon || '📝'} ${escapeHTML(data.actionText || 'Unknown Action')}</span>
+                    <span>📝 ${escapeHTML(data.action || data.actionText || 'Unknown Action')}</span>
                     <span style="color: #aeb8d2; font-size: 0.85em;">${escapeHTML(getRelativeTime(data.timestamp))}</span>
                 </li>`;
             }).join('');

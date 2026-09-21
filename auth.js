@@ -3,6 +3,12 @@ export async function ensureUserProfile(user,extraData={}){if(!user||!user.uid)r
 export async function getUserProfile(uid){if(!uid)return null;try{const snap=await getDoc(doc(db,"users",uid));if(snap.exists()){return snap.data();}}catch(error){console.error("Error loading user profile:",error);}return null;}
 export async function redirectBasedOnRole(user) {
     if (!user) return;
+    const returnTo = sessionStorage.getItem('rynix_return_to');
+    if (returnTo && /^(shopping|apps|books|os-store)\.html$/.test(returnTo)) {
+        sessionStorage.removeItem('rynix_return_to');
+        window.location.replace(returnTo);
+        return;
+    }
     const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Role check timed out')), 10000)
     );

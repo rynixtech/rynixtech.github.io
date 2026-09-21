@@ -419,6 +419,18 @@ app.get('/api/storage/documents/:filename', async (c) => {
   }
 });
 
+// Public Firebase config for client SDK initialization
+app.get('/api/client-config', (c) => {
+  return c.json({
+    apiKey: 'AIzaSyD4fRxucKX7nWJKuwdT5RX7UFogvDsIXAo',
+    authDomain: `${c.env.FIREBASE_PROJECT_ID || 'rynixtech-e0281'}.firebaseapp.com`,
+    projectId: c.env.FIREBASE_PROJECT_ID || 'rynixtech-e0281',
+    storageBucket: `${c.env.FIREBASE_PROJECT_ID || 'rynixtech-e0281'}.appspot.com`,
+    messagingSenderId: '50627783379',
+    appId: '1:50627783379:web:6041bcdf91e1bcbbfb0226'
+  });
+});
+
 // --- Public Contact Endpoint ---
 app.post('/api/public/contact', async (c) => {
   try {

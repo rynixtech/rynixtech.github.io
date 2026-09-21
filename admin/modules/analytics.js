@@ -23,7 +23,7 @@ async function loadItems() {
     const grid = document.getElementById('analytics-grid');
     if (!grid) return;
     try {
-        const q = query(collection(db, 'analytics'), orderBy('createdAt', 'desc'), limit(50));
+        const q = query(collection(db, 'analytics_data'), orderBy('createdAt', 'desc'), limit(50));
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {
@@ -53,7 +53,7 @@ async function loadItems() {
 window.delete_analytics = async (docId) => {
     if(!confirm('Delete this entry?')) return;
     try {
-        await deleteDoc(doc(db, 'analytics', docId));
+        await deleteDoc(doc(db, 'analytics_data', docId));
         loadItems();
     } catch(e) {
         alert('Error deleting: ' + e.message);
@@ -91,10 +91,10 @@ window.openModal_analytics = (docId = '', title = '', details = '') => {
 
         try {
             if(did) {
-                await updateDoc(doc(db, 'analytics', did), data);
+                await updateDoc(doc(db, 'analytics_data', did), data);
             } else {
                 data.createdAt = serverTimestamp();
-                await addDoc(collection(db, 'analytics'), data);
+                await addDoc(collection(db, 'analytics_data'), data);
             }
             hideModal();
             loadItems();
@@ -113,7 +113,7 @@ window.openModal_analytics = (docId = '', title = '', details = '') => {
 
 window.edit_analytics = async (docId) => {
     try {
-        const docRef = doc(db, 'analytics', docId);
+        const docRef = doc(db, 'analytics_data', docId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             const data = docSnap.data();
