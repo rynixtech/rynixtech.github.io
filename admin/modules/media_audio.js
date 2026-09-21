@@ -22,7 +22,7 @@ export async function render(container) {
 async function loadItems() {
     const grid = document.getElementById('media_audio-grid');
     try {
-        const q = query(collection(db, 'media_audio'), orderBy('createdAt', 'desc'), limit(50));
+        const q = query(collection(db, 'audio_media'), orderBy('createdAt', 'desc'), limit(50));
         const snapshot = await getDocs(q);
         
         if (snapshot.empty) {
@@ -101,7 +101,7 @@ window.openModal_media_audio = function() {
 
 window.edit_media_audio = async function(id) {
     try {
-        const docRef = doc(db, 'media_audio', id);
+        const docRef = doc(db, 'audio_media', id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
             currentEditingId = id;
@@ -138,10 +138,10 @@ window.save_media_audio = async function(event) {
     
     try {
         if (currentEditingId) {
-            await updateDoc(doc(db, 'media_audio', currentEditingId), data);
+            await updateDoc(doc(db, 'audio_media', currentEditingId), data);
         } else {
             data.createdAt = serverTimestamp();
-            await addDoc(collection(db, 'media_audio'), data);
+            await addDoc(collection(db, 'audio_media'), data);
         }
         hideModal();
         loadItems();
@@ -154,7 +154,7 @@ window.save_media_audio = async function(event) {
 window.delete_media_audio = async function(id) {
     if (confirm("Are you sure you want to delete this item?")) {
         try {
-            await deleteDoc(doc(db, 'media_audio', id));
+            await deleteDoc(doc(db, 'audio_media', id));
             loadItems();
         } catch (error) {
             console.error("Error deleting doc:", error);

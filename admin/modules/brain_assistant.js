@@ -95,13 +95,35 @@ export async function render(container) {
 
     const functionsMap = {
         getSystemStatus: async () => {
-            return { status: "Healthy", firestore: "Connected", b2Storage: "Operational", lastCheck: new Date().toISOString() };
+            try {
+                const healthCheck = httpsCallable(null, 'healthCheck');
+                const res = await healthCheck({});
+                return res.data || { status: 'Unknown' };
+            } catch(e) {
+                return { status: 'Error', message: e.message };
+            }
         },
         getRecentUsers: async () => {
-            return { users: ["admin@rynix.tech", "user1@example.com", "test@rynix.tech"] };
+            try {
+                const { db } = await import('../admin-firebase.js');
+                const { collection, query, orderBy, limit, getDocs } = await import('https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js');
+                const q = query(collection(db, 'users'), orderBy('lastLoginAt', 'desc'), limit(5));
+                const snapshot = await getDocs(q);
+                const users = snapshot.docs.map(d => d.data().email || d.id);
+                return { users };
+            } catch(e) {
+                return { users: [], error: e.message };
+            }
         },
         selfRepair: async () => {
-            return { result: "Success", details: "Scanned and verified all indexes, cleared cache, restored broken config references." };
+            try {
+                const healthCheck = httpsCallable(null, 'healthCheck');
+                const res = await healthCheck({});
+                const services = res.data?.services || {};
+                return { result: res.data?.status === 'Healthy' ? 'Success' : 'Issues detected', services };
+            } catch(e) {
+                return { result: 'Failed', details: e.message };
+            }
         }
     };
 

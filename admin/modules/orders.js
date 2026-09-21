@@ -87,9 +87,9 @@ export async function render(container) {
             // Assuming index exists or we just rely on date desc if no filter.
             if (filterVal) {
                 // If it fails due to missing index, it will throw.
-                baseConstraints.push(orderBy('date', 'desc'));
+                baseConstraints.push(orderBy('createdAt', 'desc'));
             } else {
-                baseConstraints.push(orderBy('date', 'desc'));
+                baseConstraints.push(orderBy('createdAt', 'desc'));
             }
 
             if (currentPage === 0) {
@@ -142,7 +142,7 @@ export async function render(container) {
         currentFiltered.forEach(data => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
-            const orderDate = data.date ? (data.date.toDate ? new Date(data.date.toDate()) : new Date(data.date)) : null;
+            const orderDate = data.createdAt ? (data.createdAt.toDate ? new Date(data.createdAt.toDate()) : new Date(data.createdAt)) : null;
             const itemsCount = Array.isArray(data.items) ? data.items.length : (Array.isArray(data.products) ? data.products.length : 0);
             
             tr.innerHTML = \`
@@ -212,7 +212,7 @@ export async function render(container) {
                 const order = currentFiltered.find(o => o.id === id);
                 if(!order) return;
                 
-                const orderDate = order.date ? (order.date.toDate ? new Date(order.date.toDate()) : new Date(order.date)) : null;
+                const orderDate = order.createdAt ? (order.createdAt.toDate ? new Date(order.createdAt.toDate()) : new Date(order.createdAt)) : null;
                 const items = Array.isArray(order.items) ? order.items : (Array.isArray(order.products) ? order.products : []);
                 
                 let itemsHtml = '<ul style="list-style:none; padding:0;">';
