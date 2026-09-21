@@ -35,10 +35,11 @@ export async function render(container) {
 
         container.innerHTML = `
             <div class="dashboard-module">
-                <h2>Dashboard Overview</h2>
+                <p class="eyebrow">Operations / live workspace</p>
+                <h2>Control the next move.</h2>
                 
                 <div class="quick-actions" style="margin-bottom: 32px; padding: 20px; background: #0f1425; border-radius: 8px;">
-                    <h3 style="margin-top: 0;">Quick Actions</h3>
+                    <h3 style="margin-top: 0;">Start a workflow</h3>
                     <div style="display: flex; flex-wrap: wrap; gap: 12px;">
                         <button class="btn btn-primary" onclick="window.location.hash='#products'">+ Add Product</button>
                         <button class="btn btn-primary" onclick="window.location.hash='#books'">+ Add Book</button>

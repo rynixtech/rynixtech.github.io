@@ -189,8 +189,9 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script defer src="script.js"></script>
   <script type="module">
-    import { auth } from './firebase.js';
+    import { auth, db } from './firebase.js';
     import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js';
+    import { collection, getDocs, limit, query } from 'https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js';
     import { getUserProfile, ensureUserProfile } from './auth.js';
 
     // Drawer Logic
@@ -219,12 +220,12 @@
     // Dynamic CSS Injection for Drawer
     const style = document.createElement('style');
     style.textContent = `
-      .side-drawer { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: #080b18; border-right: 1px solid var(--line); z-index: 1000; transition: left 0.3s ease; display: flex; flex-direction: column; overflow-y: auto; }
+      .side-drawer { position: fixed; top: 0; left: -320px; width: 300px; height: 100vh; background: #121615; border-right: 1px solid var(--line); z-index: 1000; transition: left 0.3s ease; display: flex; flex-direction: column; overflow-y: auto; }
       .side-drawer.open { left: 0; }
       .drawer-header { display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid var(--line); }
       .drawer-nav { display: flex; flex-direction: column; padding: 20px; gap: 15px; }
       .drawer-nav a { color: var(--muted); text-decoration: none; font-size: 1rem; font-weight: 600; transition: color 0.2s; }
-      .drawer-nav a:hover { color: var(--gold-soft); }
+      .drawer-nav a:hover { color: var(--lime); }
       .drawer-subnav { display: flex; flex-direction: column; padding-left: 20px; gap: 12px; margin-top: -5px; }
       .drawer-subnav a { font-size: 0.9rem; font-weight: 500; }
       .drawer-divider { border: 0; height: 1px; background: var(--line); margin: 10px 0; }
@@ -248,7 +249,7 @@
         `;
       } else {
         // Logged out
-        headerActions.innerHTML = \`<a class="button button-quiet" href="login.html">Log in</a><a class="button button-primary" href="signup.html">Get started</a>\`;
+        headerActions.innerHTML = '<a class="button button-quiet" href="login.html">Log in</a><a class="button button-primary" href="signup.html">Get started</a>';
       }
     });
     // Dynamic Featured Content Loader (Lazy loaded logic)
@@ -266,43 +267,77 @@
       let html = '';
 
       if (featuredProducts.length > 0) {
-        html += \`
+        html += `
           <section class="home-section">
             <div class="section-intro"><div><h2 class="section-title">Featured Products</h2></div></div>
             <div class="service-grid">
               <!-- Render product cards here -->
             </div>
           </section>
-        \`;
+        `;
       }
 
       if (featuredBooks.length > 0) {
-        html += \`
+        html += `
           <section class="home-section">
             <div class="section-intro"><div><h2 class="section-title">Featured Books</h2></div></div>
             <div class="service-grid">
                <!-- Render book cards here -->
             </div>
           </section>
-        \`;
+        `;
       }
 
       if (featuredApps.length > 0) {
-        html += \`
+        html += `
           <section class="home-section">
             <div class="section-intro"><div><h2 class="section-title">Featured Apps</h2></div></div>
             <div class="service-grid">
                <!-- Render app cards here -->
             </div>
           </section>
-        \`;
+        `;
       }
 
       featuredContainer.innerHTML = html;
     }
 
+    async function loadLiveFeaturedContent() {
+      const container = document.getElementById('dynamicFeaturedContent');
+      if (!container) return;
+      const escapeHTML = (value) => String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      try {
+        const [products, books, apps] = await Promise.all([
+          getDocs(query(collection(db, 'products'), limit(3))),
+          getDocs(query(collection(db, 'books'), limit(3))),
+          getDocs(query(collection(db, 'apps'), limit(3)))
+        ]);
+        const releases = [];
+        const product = products.docs.find(doc => doc.data().status !== 'draft');
+        const book = books.docs.find(doc => ['published', 'public'].includes(doc.data().status));
+        const app = apps.docs.find(doc => doc.data().active !== false);
+        if (product) releases.push({ label: 'Store / product', title: product.data().name || 'New Rynix product', copy: product.data().description || 'Explore the latest release from Rynix.', href: 'shopping.html' });
+        if (book) releases.push({ label: 'Rynix Press', title: book.data().title || book.data().name || 'New publication', copy: book.data().description || 'A new perspective from Rynix Press.', href: 'books.html' });
+        if (app) releases.push({ label: 'App Store', title: app.data().name || 'New Rynix app', copy: app.data().description || 'A focused tool for modern work.', href: 'apps.html' });
+        if (!releases.length) return;
+        const section = document.createElement('section');
+        section.className = 'home-section';
+        section.innerHTML = '<div class="section-intro"><div><p class="eyebrow">Live from Rynix</p><h2 class="section-title">Fresh releases.</h2></div><p class="section-copy">Recently published work, pulled directly from the Rynix catalog.</p></div><div class="service-grid"></div>';
+        const grid = section.querySelector('.service-grid');
+        releases.forEach(release => {
+          const card = document.createElement('article');
+          card.className = 'service-card';
+          card.innerHTML = '<p class="eyebrow">' + escapeHTML(release.label) + '</p><h3>' + escapeHTML(release.title) + '</h3><p>' + escapeHTML(release.copy) + '</p><a class="button button-ghost" href="' + release.href + '" style="margin-top:24px;justify-content:flex-start;padding-left:0;">Explore release →</a>';
+          grid.appendChild(card);
+        });
+        container.replaceChildren(section);
+      } catch (error) {
+        console.warn('Featured content could not be loaded:', error);
+      }
+    }
+
     // Load featured content without blocking the main render
-    requestIdleCallback ? requestIdleCallback(loadFeaturedContent) : setTimeout(loadFeaturedContent, 500);
+    window.requestIdleCallback ? window.requestIdleCallback(loadLiveFeaturedContent) : setTimeout(loadLiveFeaturedContent, 500);
 
     // Contact Form Logic
     const contactForm = document.getElementById('contactForm');

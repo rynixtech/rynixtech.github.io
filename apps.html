@@ -37,6 +37,9 @@
 
   <header class="site-header">
     <a class="brand" href="index.html">RYNIX TECH</a>
+    <nav class="site-nav" aria-label="Primary navigation">
+      <a href="shopping.html">Shopping</a><a href="books.html">Book Store</a><a href="apps.html">App Store</a><a href="os-store.html">OS Store</a>
+    </nav>
     <div class="header-actions">
       <a class="button button-quiet" href="dashboard.html">My Account</a>
     </div>
@@ -47,7 +50,7 @@
       <h1>App Store</h1>
       <p>Download our secure digital applications and APKs.</p>
       <div class="search-bar">
-        <input type="text" placeholder="Search applications..." aria-label="Search Apps">
+        <input type="text" id="apps-search" placeholder="Search applications..." aria-label="Search Apps">
       </div>
     </div>
     
@@ -87,7 +90,7 @@
           const size = data.size ? (data.size / 1024 / 1024).toFixed(1) + ' MB' : 'Unknown Size';
           
           return `
-            <article class="app-card">
+            <article class="app-card" data-search="${esc(`${data.name || ''} ${data.description || ''} ${version}`.toLowerCase())}">
               <div class="app-icon">📱</div>
               <div class="app-details">
                 <h3>${esc(data.name || 'Unnamed App')}</h3>
@@ -100,7 +103,7 @@
                    Release Notes: ${esc(data.releaseNotes || 'No release notes.')}<br>
                    Screenshots: ${data.screenshots ? 'Available' : 'None'}
                 </div>
-                <button class="button button-quiet" style="width:100%; min-height: 35px; font-size: 0.8rem;" onclick="window.open('${esc(data.downloadUrl || '#')}', '_blank')">Download</button>
+                ${data.downloadUrl ? `<a class="button button-quiet" style="width:100%; min-height:35px; font-size:.8rem;" href="${esc(data.downloadUrl)}" target="_blank" rel="noopener">Download</a>` : '<button class="button button-quiet" style="width:100%; min-height:35px; font-size:.8rem;" disabled>Download unavailable</button>'}
               </div>
             </article>
           `;
@@ -109,6 +112,13 @@
         grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #ff758f; padding: 40px;">Failed to load applications.</div>';
       }
     }
+
+    document.getElementById('apps-search').addEventListener('input', event => {
+      const query = event.target.value.trim().toLowerCase();
+      document.querySelectorAll('#appsGrid .app-card').forEach(card => {
+        card.hidden = Boolean(query) && !card.dataset.search.includes(query);
+      });
+    });
 
     loadApps();
   </script>

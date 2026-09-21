@@ -258,7 +258,7 @@
           html += `
             <div class="card-item">
               <h4>Order #${esc(doc.id)}</h4>
-              <p>Total: $${esc(data.total || '0.00')} | Status: ${esc(data.status || 'Pending')}</p>
+              <p>Total: $${esc(data.amount ?? data.total ?? '0.00')} | Status: ${esc(data.status || 'Pending')}</p>
             </div>
           `;
         });
