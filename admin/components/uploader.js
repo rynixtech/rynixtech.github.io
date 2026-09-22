@@ -102,7 +102,7 @@ export class SystemUploader {
           statusText.textContent = 'UPLOADING...';
           
           xhr = new XMLHttpRequest();
-          xhr.open('POST', 'https://rynixtech-github-io.rynixtech.workers.dev/api/storage/upload', true);
+          xhr.open('POST', 'https://rynixtech-github-io.rynixtechgroup.workers.dev/api/storage/upload', true);
           xhr.setRequestHeader('Authorization', `Bearer ${token}`);
           
           const formData = new FormData();
@@ -153,7 +153,7 @@ export class SystemUploader {
                 name: file.name,
                 size: file.size,
                 contentType: file.type || 'application/octet-stream',
-                url: publicUrl || `https://rynixtech-github-io.rynixtech.workers.dev/${objectKey}`,
+                url: publicUrl || `https://rynixtech-github-io.rynixtechgroup.workers.dev/${objectKey}`,
                 fullPath: objectKey,
                 category
               };

@@ -4,7 +4,7 @@ export { app, auth, db, ai, aiAdminModel, httpsCallable };
 
 export async function deleteB2Object(objectKey) {
     const token = await auth.currentUser.getIdToken();
-    const res = await fetch('https://rynixtech-github-io.rynixtech.workers.dev/api/storage/delete', {
+    const res = await fetch('https://rynixtech-github-io.rynixtechgroup.workers.dev/api/storage/delete', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

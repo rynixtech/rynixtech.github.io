@@ -29,9 +29,9 @@ export function httpsCallable(functionsInstance, functionName) {
     
     let url = '';
     if (['setInitialAdmin', 'requestSignupOtp', 'verifySignupOtp', 'requestPasswordResetOtp', 'verifyPasswordResetOtp'].includes(functionName)) {
-      url = `https://rynixtech-github-io.rynixtech.workers.dev/api/auth/${functionName}`;
+      url = `https://rynixtech-github-io.rynixtechgroup.workers.dev/api/auth/${functionName}`;
     } else {
-      url = `https://rynixtech-github-io.rynixtech.workers.dev/api/admin/${functionName}`;
+      url = `https://rynixtech-github-io.rynixtechgroup.workers.dev/api/admin/${functionName}`;
     }
 
     const headers = { 'Content-Type': 'application/json' };
