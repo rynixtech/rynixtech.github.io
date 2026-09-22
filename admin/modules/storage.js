@@ -65,7 +65,7 @@ export async function render(container) {
     let allFolders = [];
     let isSearch = false;
 
-    const WORKER_URL = 'https://rynixtech-control-center-worker.rynixtech.workers.dev';
+    const WORKER_URL = 'https://rynixtech-github-io.rynixtech.workers.dev';
 
     async function apiCall(endpoint, method = 'GET', body = null) {
         const token = await auth.currentUser.getIdToken();

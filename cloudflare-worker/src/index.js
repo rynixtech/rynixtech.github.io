@@ -19,10 +19,16 @@ const AUTHORIZED_ADMIN_UIDS = [
 ];
 
 function getFirebaseRest(env) {
+  let pk = env.FIREBASE_PRIVATE_KEY || '';
+  if (pk.startsWith('"') && pk.endsWith('"')) {
+    pk = pk.slice(1, -1);
+  }
+  pk = pk.replace(/\\n/g, '\n');
+  
   const sa = {
     project_id: env.FIREBASE_PROJECT_ID,
     client_email: env.FIREBASE_CLIENT_EMAIL,
-    private_key: (env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n')
+    private_key: pk
   };
   return new FirebaseRest(sa, env.FIREBASE_PROJECT_ID);
 }

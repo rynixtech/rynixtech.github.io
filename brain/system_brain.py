@@ -267,7 +267,7 @@ class ServiceHealthChecker:
         
         # 1. Cloudflare Worker
         try:
-            r = requests.get('https://rynixtech-control-center-worker.rynixtech.workers.dev/', timeout=10)
+            r = requests.get('https://rynixtech-github-io.rynixtech.workers.dev/', timeout=10)
             if r.status_code in (200, 404):
                 status['cloudflare_worker'] = 'UP'
             else:
