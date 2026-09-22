@@ -20,6 +20,10 @@ const AUTHORIZED_ADMIN_UIDS = [
 
 function getFirebaseRest(env) {
   let pk = env.FIREBASE_PRIVATE_KEY || '';
+  console.log("Diagnostic FIREBASE_PRIVATE_KEY length:", pk.length);
+  if (!pk || pk.trim() === '') {
+    throw new Error("Server misconfiguration: FIREBASE_PRIVATE_KEY is missing from environment variables.");
+  }
   if (pk.startsWith('"') && pk.endsWith('"')) {
     pk = pk.slice(1, -1);
   }

@@ -17,9 +17,9 @@ export const appCheck = initializeAppCheck(app, {
 export const auth=getAuth(app);
 export const db=getFirestore(app);
 export const ai=getAI(app, { backend: new GoogleAIBackend() });
-export const aiModel=getGenerativeModel(ai, { model: "gemini-2.5-flash-lite" });
+export const aiModel=getGenerativeModel(ai, { model: "gemini-3.5-flash-lite" });
 export const aiAdminModel=getGenerativeModel(ai, { 
-  model: "gemini-2.5-flash",
+  model: "gemini-3.5-flash",
   systemInstruction: "You are the Rynix Tech Website Brain and Admin Controller. You manage operations, answer queries about the system, and can execute commands on the site database. Keep your tone professional and authoritative."
 });
 export function httpsCallable(functionsInstance, functionName) {
